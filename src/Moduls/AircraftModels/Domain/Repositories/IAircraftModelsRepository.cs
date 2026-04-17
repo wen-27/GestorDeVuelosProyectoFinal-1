@@ -1,21 +1,18 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using GestorDeVuelosProyectoFinal.Moduls.AircraftModels.Domain.Aggregate;
-using GestorDeVuelosProyectoFinal.Moduls.AircraftModels.Domain.ValueObject;
-// AJUSTE AQUÍ:
-using GestorDeVuelosProyectoFinal.src.Moduls.AircraftManufacturers.Domain.ValueObject;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.Aggregate;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.ValueObject;
 
-namespace GestorDeVuelosProyectoFinal.Moduls.AircraftModels.Domain.Repositories;
+
+namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.Repositories;
 
 public interface IAircraftModelsRepository
 {
-    Task<AircraftModel?> GetByIdAsync(AircraftModelId id);
-    
+    Task AddAsync(AircraftModel model, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<AircraftModel>> GetByManufacturerIdAsync(AircraftManufacturersId manufacturerId);
+    Task<AircraftModel?> FindByIdAsync(AircraftModelId id, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<AircraftModel>> GetAllAsync();
-    
-    Task SaveAsync(AircraftModel model);
-    Task DeleteAsync(AircraftModelId id);
+    Task<IReadOnlyCollection<AircraftModel>> FindAllAsync(CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(AircraftModel model, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteByIdAsync(AircraftModelId id, CancellationToken cancellationToken = default);
 }

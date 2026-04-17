@@ -26,6 +26,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="src\Moduls\AircraftModels\Application\Services\" />
+    <Folder Include="src\Moduls\AircraftModels\Infrastructure\Persistence\" />
+    <Folder Include="src\Moduls\AircraftModels\Infrastructure\Persistence\Seeders\" />
+    <Folder Include="src\Moduls\AircraftModels\Infrastructure\Repository\" />
+    <Folder Include="src\Moduls\AircraftModels\UI\" />
     <Folder Include="src\Moduls\FlightStatus\Domain\ValueObject\" />
     <Folder Include="src\Moduls\PaymentMediumTypes\Domain\Repositories\" />
   </ItemGroup>
