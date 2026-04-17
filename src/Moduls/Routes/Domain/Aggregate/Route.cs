@@ -16,9 +16,9 @@ public sealed class Route
     private Route() { }
 
     public static Route Create(
-        Guid id,
-        Guid originId,
-        Guid destinationId,
+        int id,
+        int originId,
+        int destinationId,
         int? distanceKm,
         int? durationMin)
     {

@@ -1,16 +1,15 @@
 using System;
 using GestorDeVuelosProyectoFinal.Moduls.Personal.Domain.ValueObject;
-using GestorDeVuelosProyectoFinal.Moduls.People.Domain.ValueObject; // Revisa si es People o Personas
+using GestorDeVuelosProyectoFinal.Moduls.People.Domain.ValueObject; 
 using GestorDeVuelosProyectoFinal.Moduls.PersonalPositions.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.Moduls.Airlines.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.Moduls.Airports.Domain.ValueObject;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.Personal.Domain.Aggregate;
 
-public sealed class Staff // Cambiado de Personal a Staff
+public sealed class Staff 
 {
     public PersonalId Id { get; private set; } = null!;
-    // AQUÍ: Si tu clase en el módulo de personas se llama PeopleId, cámbialo abajo:
     public PeopleId PersonId { get; private set; } = null!; 
     public PersonalPositionsId PositionId { get; private set; } = null!;
     public AirlinesId? AirlineId { get; private set; }
@@ -22,6 +21,7 @@ public sealed class Staff // Cambiado de Personal a Staff
 
     private Staff() { }
 
+    // CORRECCIÓN: Cambiamos 'int' por 'Guid' en los parámetros de entrada
     public static Staff Create(
         Guid id, Guid personId, Guid positionId, Guid? airlineId, Guid? airportId,
         DateTime hireDate, bool isActive, DateTime createdIn, DateTime updatedIn)
@@ -29,7 +29,7 @@ public sealed class Staff // Cambiado de Personal a Staff
         return new Staff
         {
             Id = PersonalId.Create(id),
-            PersonId = PeopleId.Create(personId), // Ajusta si es PeopleId o PersonId
+            PersonId = PeopleId.Create(personId), 
             PositionId = PersonalPositionsId.Create(positionId),
             AirlineId = airlineId.HasValue ? AirlinesId.Create(airlineId.Value) : null,
             AirportId = airportId.HasValue ? AirportsId.Create(airportId.Value) : null,

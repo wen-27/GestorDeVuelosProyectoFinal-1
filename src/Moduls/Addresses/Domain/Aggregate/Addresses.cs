@@ -36,13 +36,13 @@ public sealed class Address
     }
 
     public static Address Create(
-        Guid id, 
-        Guid roadTypeId, 
+        int id, 
+        int roadTypeId, 
         string nameVia, 
         string? number, 
         string? complement, 
         string? postalCode, 
-        Guid cityId)
+        int cityId)
     {
         return new Address(
             AddressesId.Create(id),

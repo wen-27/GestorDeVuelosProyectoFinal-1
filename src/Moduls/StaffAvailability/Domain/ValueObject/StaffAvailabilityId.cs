@@ -4,11 +4,11 @@ namespace GestorDeVuelosProyectoFinal.Moduls.StaffAvailability.Domain.ValueObjec
 
 public sealed class StaffAvailabilityId
 {
-    public Guid Value { get; }
-    private StaffAvailabilityId(Guid value) => Value = value;
-    public static StaffAvailabilityId Create(Guid value)
+    public int Value { get; }
+    private StaffAvailabilityId(int value) => Value = value;
+    public static StaffAvailabilityId Create(int value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("El ID de disponibilidad no es válido.");
+        if (value == int.Empty) throw new ArgumentException("El ID de disponibilidad no es válido.");
         return new StaffAvailabilityId(value);
     }
 }
