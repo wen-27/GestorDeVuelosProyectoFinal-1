@@ -6,7 +6,7 @@ public sealed class ContinentsId
 {
     public Guid Value { get; }
 
-    private ContinentsId(Guid value) => Value = value;
+    public ContinentsId(Guid value) => Value = value;
 
     public static ContinentsId Create(Guid value)
     {

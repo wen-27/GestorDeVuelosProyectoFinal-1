@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+/*using Microsoft.EntityFrameworkCore;
 using GestorDeVuelosProyectoFinal.Moduls.Addresses.Domain.Aggregate; 
 using GestorDeVuelosProyectoFinal.Moduls.Addresses.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Shared.Context;
@@ -67,4 +67,4 @@ public sealed class AddressesRepository : IAddressRepository
 
 
     // ... Implementar los demás métodos siguiendo la misma lógica
-}
+}*/

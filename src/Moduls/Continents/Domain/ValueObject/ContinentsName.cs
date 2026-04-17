@@ -5,7 +5,7 @@ namespace GestorDeVuelosProyectoFinal.Moduls.Continents.Domain.ValueObject;
 public sealed record ContinentName // Sin la 's' para que coincida con el Agregado
 {
     public string Value { get; }
-    private ContinentName(string value) => Value = value;
+    public ContinentName(string value) => Value = value;
 
     public static ContinentName Create(string value) // PascalCase
     {
