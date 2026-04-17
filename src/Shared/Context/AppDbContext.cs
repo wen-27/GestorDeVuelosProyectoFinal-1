@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using GestorDeVuelosProyectoFinal.Moduls.Continents.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Countries.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Regions.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.ValueObject;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Entity;
 
 
 
@@ -13,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<ContinentEntity> Continents { get; set; }
     public DbSet<CountryEntity> Countries { get; set; }
     public DbSet<RegionEntity> Regions { get; set; }
+    public DbSet<AircraftModelsEntity> AircraftModels { get; set; } 
 
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }

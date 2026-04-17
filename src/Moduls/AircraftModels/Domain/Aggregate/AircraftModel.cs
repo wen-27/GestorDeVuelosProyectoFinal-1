@@ -1,15 +1,11 @@
-using System;
 using GestorDeVuelosProyectoFinal.Moduls.AircraftModels.Domain.ValueObject;
-// AJUSTE AQUÍ: Usando tu namespace exacto (revisa si lleva el .src o no)
-using GestorDeVuelosProyectoFinal.src.Moduls.AircraftManufacturers.Domain.ValueObject;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.ValueObject;
 
-namespace GestorDeVuelosProyectoFinal.Moduls.AircraftModels.Domain.Aggregate;
+namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.Aggregate;
 
 public sealed class AircraftModel
 {
     public AircraftModelId Id { get; private set; } = null!;
-
-    public AircraftManufacturersId ManufacturerId { get; private set; } = null!; 
     public AircraftModelName ModelName { get; private set; } = null!;
     public AircraftModelMaxCapacity MaxCapacity { get; private set; } = null!;
     public AircraftModelWeight MaxTakeoffWeight { get; private set; } = null!;
@@ -18,28 +14,42 @@ public sealed class AircraftModel
     public AircraftModelCruiseAltitude CruiseAltitude { get; private set; } = null!;
 
     private AircraftModel() { }
+    private AircraftModel(
+        AircraftModelId id, 
+        AircraftModelName name, 
+        AircraftModelMaxCapacity maxCapacity, AircraftModelWeight maxTakeoffWeight, AircraftModelFuelConsumption fuelConsumption, AircraftModelCruiseSpeed cruiseSpeed, AircraftModelCruiseAltitude cruiseAltitude)
+    {
+        Id = id;
+        ModelName = name;
+        MaxCapacity = maxCapacity;
+        MaxTakeoffWeight = maxTakeoffWeight;
+        FuelConsumption = fuelConsumption;
+        CruiseSpeed = cruiseSpeed;
+        CruiseAltitude = cruiseAltitude;
+    }
 
     public static AircraftModel Create(
-        Guid id,
-        Guid manufacturerId,
-        string modelName,
+        int id,
+        string name,
         int maxCapacity,
         decimal? weight,
         decimal? fuelConsumption,
         int? cruiseSpeed,
         int? cruiseAltitude)
     {
-        return new AircraftModel
-        {
-            Id = AircraftModelId.Create(id),
-
-            ManufacturerId = AircraftManufacturersId.Create(manufacturerId),
-            ModelName = AircraftModelName.Create(modelName),
-            MaxCapacity = AircraftModelMaxCapacity.Create(maxCapacity),
-            MaxTakeoffWeight = AircraftModelWeight.Create(weight),
-            FuelConsumption = AircraftModelFuelConsumption.Create(fuelConsumption),
-            CruiseSpeed = AircraftModelCruiseSpeed.Create(cruiseSpeed),
-            CruiseAltitude = AircraftModelCruiseAltitude.Create(cruiseAltitude)
-        };
+        return new AircraftModel(
+            AircraftModelId.Create(id),
+            AircraftModelName.Create(name),
+            AircraftModelMaxCapacity.Create(maxCapacity),
+            AircraftModelWeight.Create(weight),
+            AircraftModelFuelConsumption.Create(fuelConsumption),
+            AircraftModelCruiseSpeed.Create(cruiseSpeed),
+            AircraftModelCruiseAltitude.Create(cruiseAltitude)
+        );
     }
+    public void UpdateName(string name) =>
+        ModelName = AircraftModelName.Create(name);
+
+    public void UpdateMaxCapacity(int capacity) =>
+        MaxCapacity = AircraftModelMaxCapacity.Create(capacity);
 }

@@ -1,14 +1,14 @@
-using System;
+namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.ValueObject;
 
-namespace GestorDeVuelosProyectoFinal.Moduls.AircraftModels.Domain.ValueObject;
-
-public sealed class AircraftModelId
+public sealed record AircraftModelId
 {
-    public Guid Value { get; }
-    private AircraftModelId(Guid value) => Value = value;
-    public static AircraftModelId Create(Guid value)
+    public int Value { get; }
+    private AircraftModelId(int value) => Value = value;
+    public static AircraftModelId Create(int value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("El ID del modelo no es válido.");
+        if (value <= 0)
+            throw new ArgumentException("El ID del modelo no es válido.", nameof(value));
         return new AircraftModelId(value);
     }
+    public override string ToString() => Value.ToString();
 }
