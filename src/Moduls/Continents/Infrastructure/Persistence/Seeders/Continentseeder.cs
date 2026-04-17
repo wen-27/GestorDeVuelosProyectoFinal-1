@@ -33,7 +33,7 @@ public sealed class ContinentSeeder
         {
             if (existingNames.Contains(name)) continue;
 
-            var continent = Continent.Create(Guid.NewGuid(), name);
+            var continent = Continent.Create(0, name);
             await _repository.SaveAsync(continent);
         }
 

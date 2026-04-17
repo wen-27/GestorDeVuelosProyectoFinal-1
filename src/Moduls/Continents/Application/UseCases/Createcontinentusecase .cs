@@ -22,7 +22,7 @@ public sealed class CreateContinentUseCase
         if (existing is not null)
             throw new InvalidOperationException($"A continent named '{name}' already exists.");
 
-        var continent = Continent.Create(Guid.NewGuid(), name);
+        var continent = Continent.Create(0, name);
 
         await _repository.SaveAsync(continent);
         await _unitOfWork.SaveChangesAsync();

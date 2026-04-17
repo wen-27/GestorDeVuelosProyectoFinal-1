@@ -26,7 +26,7 @@ public sealed class Airline
         Guid id, 
         string name, 
         string iataCode, 
-        Guid originCountryId, 
+        int originCountryId,
         bool isActive,
         DateTime createdIn,
         DateTime updatedIn)
