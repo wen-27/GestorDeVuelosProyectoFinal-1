@@ -27,6 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="src\Moduls\FlightStatus\Domain\ValueObject\" />
+    <Folder Include="src\Moduls\PassengerReservations\Application\Services\" />
     <Folder Include="src\Moduls\PaymentMediumTypes\Domain\Repositories\" />
   </ItemGroup>
 </Project>
