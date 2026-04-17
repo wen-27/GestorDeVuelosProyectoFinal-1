@@ -10,13 +10,13 @@ public sealed class AircraftModelSeeder
     private readonly IUnitOfWork _unitOfWork;
 
     private static readonly (string Name, int Capacity, int Speed)[] _seeds =
-    [
+    {
         ("Boeing 737-800", 189, 842),
         ("Airbus A320",    180, 828),
         ("Boeing 787-9",   296, 903),
         ("Airbus A380",    555, 903),
-        ("Embraer E190",   100, 870),
-    ];
+        ("Embraer E190",   100, 870)
+    };
 
     public AircraftModelSeeder(IAircraftModelsRepository repository, IUnitOfWork unitOfWork)
     {
