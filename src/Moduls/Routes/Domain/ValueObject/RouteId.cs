@@ -4,11 +4,12 @@ namespace GestorDeVuelosProyectoFinal.Moduls.Routes.Domain.ValueObject;
 
 public sealed class RouteId
 {
-    public Guid Value { get; }
-    private RouteId(Guid value) => Value = value;
-    public static RouteId Create(Guid value)
+    public int Value { get; }
+    private RouteId(int value) => Value = value;
+    public static RouteId Create(int value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("El ID de la ruta no es válido.");
+        if (value <= 0)
+        throw new ArgumentException("El ID de la ruta no es válido.");
         return new RouteId(value);
     }
 }

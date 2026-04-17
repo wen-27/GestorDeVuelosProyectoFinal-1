@@ -4,11 +4,11 @@ namespace GestorDeVuelosProyectoFinal.Moduls.Personal.Domain.ValueObject;
 
 public sealed class PersonalId
 {
-    public Guid Value { get; }
-    private PersonalId(Guid value) => Value = value;
-    public static PersonalId Create(Guid value)
+    public int Value { get; }
+    private PersonalId(int value) => Value = value;
+    public static PersonalId Create(int value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("El ID de personal no es válido.");
+        if (value == int.Empty) throw new ArgumentException("El ID de personal no es válido.");
         return new PersonalId(value);
     }
 }

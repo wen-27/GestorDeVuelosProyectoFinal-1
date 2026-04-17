@@ -17,9 +17,9 @@ public sealed class StaffAvailabilityRecord
     private StaffAvailabilityRecord() { }
 
     public static StaffAvailabilityRecord Create(
-        Guid id,
-        Guid staffId,
-        Guid stateId,
+        int id,
+        int staffId,
+        int stateId,
         DateTime startDate,
         DateTime endDate,
         string? observation)

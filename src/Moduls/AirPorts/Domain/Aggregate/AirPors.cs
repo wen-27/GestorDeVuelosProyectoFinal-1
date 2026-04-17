@@ -14,7 +14,7 @@ public sealed class Airport
 
     private Airport() { }
 
-    public static Airport Create(Guid id, string name, string iataCode, string? icaoCode, Guid cityId)
+    public static Airport Create(int id, string name, string iataCode, string? icaoCode, int cityId)
     {
         return new Airport
         {
