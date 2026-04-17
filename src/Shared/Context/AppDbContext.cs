@@ -6,6 +6,7 @@ using GestorDeVuelosProyectoFinal.Moduls.Regions.Infrastructure.Persistence.Enti
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.Cities.Infrastructure.Persistence.Entities;
 
 
 
@@ -16,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<ContinentEntity> Continents { get; set; }
     public DbSet<CountryEntity> Countries { get; set; }
     public DbSet<RegionEntity> Regions { get; set; }
+    public DbSet<CityEntity> Cities { get; set; } = null!;
     public DbSet<AircraftModelsEntity> AircraftModels { get; set; } 
 
 
@@ -28,6 +30,8 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ContinentEntityConfiguration());
         modelBuilder.ApplyConfiguration(new RegionEntityConfiguration());
         modelBuilder.ApplyConfiguration(new CountryEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new CityEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AircraftModelsEntityConfiguration());
     }
 
 }

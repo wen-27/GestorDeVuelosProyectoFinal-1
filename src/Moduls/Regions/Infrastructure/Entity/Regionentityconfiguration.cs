@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+using GestorDeVuelosProyectoFinal.Moduls.Regions.Infrastructure.Persistence.Entities;
+
 namespace GestorDeVuelosProyectoFinal.Moduls.Regions.Infrastructure.Persistence.Entities;
 
 public sealed class RegionEntityConfiguration : IEntityTypeConfiguration<RegionEntity>
@@ -8,7 +10,6 @@ public sealed class RegionEntityConfiguration : IEntityTypeConfiguration<RegionE
     public void Configure(EntityTypeBuilder<RegionEntity> builder)
     {
         builder.ToTable("regions");
-
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.Id)
