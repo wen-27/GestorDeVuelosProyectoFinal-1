@@ -9,11 +9,12 @@ namespace GestorDeVuelosProyectoFinal.Moduls.Cities.Domain.Repositories;
 public interface ICityRepository
 {
     Task<City?> GetByIdAsync(CityId id);
+    Task<City?> GetByNameAsync(string name);
     Task<IEnumerable<City>> GetAllAsync();
-    
-    // Para cargar ciudades cuando el usuario selecciona una región/departamento
-    Task<IEnumerable<City>> GetByRegionAsync(RegionId regionId);
-    
+    Task<IEnumerable<City>> GetByCountryAsync(RegionId regionId);
+    Task saveAsync(City city);
     Task SaveAsync(City city);
     Task DeleteAsync(CityId id);
+    Task DeleteByNameAsync(string name);
+    Task DeleteByCountryAsync(RegionId regionId);
 }

@@ -6,7 +6,7 @@ using GestorDeVuelosProyectoFinal.Moduls.Regions.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.Moduls.Regions.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Countries.Domain.ValueObject;
 
-namespace GestorDeVuelosProyectoFinal.Moduls.Regions.Infrastructure.Persistence.Repositories;
+namespace GestorDeVuelosProyectoFinal.Regions.Infrastructure.Persistence.Repositories;
 
 public sealed class RegionRepository : IRegionsRepository
 {
