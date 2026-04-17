@@ -20,7 +20,7 @@ public sealed class Continent
     }
 
 
-    public static Continent Create(Guid id, string name)
+    public static Continent Create(int id, string name)
     {
         return new Continent(
             ContinentsId.Create(id),

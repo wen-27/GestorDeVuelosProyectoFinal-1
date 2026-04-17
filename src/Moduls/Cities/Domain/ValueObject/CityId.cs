@@ -1,18 +1,12 @@
-using System;
-
-namespace GestorDeVuelosProyectoFinal.Moduls.Cities.Domain.ValueObject;
-
-public sealed class CityId 
+// CityId.cs
+public sealed class CityId
 {
-    public Guid Value { get; }
-
-    public  CityId(Guid value) => Value = value;
-
-    public static CityId Create(Guid value)
+    public int Value { get; }
+    private CityId(int value) => Value = value;
+    public static CityId Create(int value)
     {
-        if (value == Guid.Empty)
+        if (value <= 0)
             throw new ArgumentException("El id de la ciudad no es válido", nameof(value));
-
         return new CityId(value);
     }
 }

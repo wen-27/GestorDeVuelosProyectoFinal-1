@@ -21,7 +21,7 @@ public sealed class City
         RegionId = regionId;
     }
 
-    public static City Create(Guid id, string name, Guid regionId)
+    public static City Create(int id, string name, int regionId)
     {
         return new City(
             CityId.Create(id),

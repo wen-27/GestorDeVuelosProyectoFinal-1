@@ -19,7 +19,7 @@ public sealed class Region
         CountryId = countryId;
     }
 
-    public static Region Create(Guid id, string name, Guid countryId)
+    public static Region Create(int id, string name, int countryId)
     {
         return new Region(
             RegionId.Create(id),

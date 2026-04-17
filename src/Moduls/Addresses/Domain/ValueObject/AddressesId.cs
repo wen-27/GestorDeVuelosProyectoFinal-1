@@ -2,17 +2,14 @@ using System;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.Addresses.Domain.ValueObject;
 
-public sealed record AddressesId
+public sealed class AddressesId
 {
-    public Guid Value { get; }
-    public AddressesId(Guid value) => Value = value;
-
-    public static AddressesId Create(Guid value)
+    public int Value { get; }
+    private AddressesId(int value) => Value = value;
+    public static AddressesId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El ID de la dirección no puede estar vacío.", nameof(value));
-
+        if (value <= 0)
+            throw new ArgumentException("El id de la dirección no es válido", nameof(value));
         return new AddressesId(value);
     }
-    public override string ToString() => Value.ToString();
 }

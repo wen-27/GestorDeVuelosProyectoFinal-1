@@ -93,7 +93,7 @@ public sealed class ContinentRepository : IContinentsRepository
 
     private static Continent MapToDomain(ContinentEntity entity)
     {
-        return Continent.Create(Guid.NewGuid(), entity.Name);
+        return Continent.Create(entity.Id, entity.Name);
     }
 
     private static ContinentEntity MapToEntity(Continent continent)

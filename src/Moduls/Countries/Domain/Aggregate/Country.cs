@@ -1,4 +1,4 @@
-using GestorDeVuelosProyectoFinal.Moduls.Continents.Domain.ValueObject; // Referencia al otro módulo
+using GestorDeVuelosProyectoFinal.Moduls.Continents.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.Moduls.Countries.Domain.ValueObject;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.Countries.Domain.Aggregate;
@@ -8,8 +8,6 @@ public sealed class Country
     public CountryId Id { get; private set; } = null!;
     public CountryName Name { get; private set; } = null!;
     public CountryIsoCode IsoCode { get; private set; } = null!;
-    
-    // Aquí usamos el Value Object del ID del continente como Foreign Key
     public ContinentsId ContinentId { get; private set; } = null!;
 
     private Country() { }
@@ -22,13 +20,28 @@ public sealed class Country
         ContinentId = continentId;
     }
 
-    public static Country Create(Guid id, string name, string isoCode, Guid continentId)
+    public static Country Create(int id, string name, string isoCode, int continentId)
     {
         return new Country(
             CountryId.Create(id),
             CountryName.Create(name),
             CountryIsoCode.Create(isoCode),
-            ContinentsId.Create(continentId)
+            ContinentsId.Create(continentId)  
         );
+    }
+
+    public void UpdateName(string newName)
+    {
+        Name = CountryName.Create(newName);
+    }
+
+    public void UpdateIsoCode(string newIsoCode)
+    {
+        IsoCode = CountryIsoCode.Create(newIsoCode);
+    }
+
+    public void UpdateContinent(int newContinentId)
+    {
+        ContinentId = ContinentsId.Create(newContinentId);
     }
 }
