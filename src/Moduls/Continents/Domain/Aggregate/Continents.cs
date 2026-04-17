@@ -10,10 +10,10 @@ public sealed class Continent
     public ContinentName Name { get; private set; } = null!;
 
     // Constructor vacío para ORMs como Entity Framework (necesario a veces)
-    private Continent() { }
+    public Continent() { }
 
     // Constructor principal privado
-    private Continent(ContinentsId id, ContinentName name)
+    public Continent(ContinentsId id, ContinentName name)
     {
         Id = id;
         Name = name;

@@ -1,6 +1,8 @@
 using System;
 using Microsoft.EntityFrameworkCore;
-using GestorDeVuelosProyectoFinal.src.Moduls.Continents.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.Continents.Infrastructure.Persistence.Entities;
+/*using GestorDeVuelosProyectoFinal.Moduls.Addresses.Infrastructure.Persistence.Entities;
+
 using GestorDeVuelosProyectoFinal.src.Moduls.Countries.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.Regions.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.DocumentTypes.Infrastructure.Entity;
@@ -55,14 +57,15 @@ using GestorDeVuelosProyectoFinal.src.Moduls.CardTypes.Infrastructure.Entity;
 using  GestorDeVuelosProyectoFinal.src.Moduls.CardIssuers.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.PaymentMethods.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.Payments.Infrastructure.Entity;
-using GestorDeVuelosProyectoFinal.src.Moduls.SystemRoles.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.src.Moduls.SystemRoles.Infrastructure.Entity;*/
 
 
 namespace GestorDeVuelosProyectoFinal.src.Shared.Context;
 
 public class AppDbContext : DbContext
 {
-    public DbSet<ContinentsEntity> Continents { get; set; }
+    public DbSet<ContinentEntity> Continents { get; set; }
+     /*public Dbset<AddressEntity> Addresses { get; set; }
     public DbSet<CountriesEntity> Countries { get; set; }
     public DbSet<RegionsEntity> Regions { get; set; }
     public DbSet<DocumentTypesEntity> DocumentTypes { get; set; }
@@ -118,14 +121,15 @@ public class AppDbContext : DbContext
     public DbSet<CardIssuersEntity> CardIssuers {get; set;}
     public DbSet<PaymentMethodsEntity> PaymentMethods {get; set;}
     public DbSet<PaymentsEntity> Payments {get; set;}
-    public DbSet<SystemRolesEntity> SystemRoles {get; set;}
+    public DbSet<SystemRolesEntity> SystemRoles {get; set;}*/
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         // Aplica todas las configuraciones de la carpeta infrastructure/Entity
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new ContinentEntityConfiguration());
     }
 
 }
+
