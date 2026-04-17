@@ -10,16 +10,24 @@ public sealed class PassengerReservation
     public PassengerReservationId Id { get; private set; } = null!;
     public FlightReservationId FlightReservationId { get; private set; } = null!;
     public PassengersId PassengerId { get; private set; } = null!;
+    internal void SetId(int id)
+    {
+        Id = PassengerReservationId.Create(id);
+    }
 
     private PassengerReservation() { }
 
-    public static PassengerReservation Create(Guid id, Guid flightReservationId, Guid passengerId)
+    public static PassengerReservation Create(int flightReservationId, int passengerId)
     {
         return new PassengerReservation
         {
-            Id = PassengerReservationId.Create(id),
             FlightReservationId = FlightReservationId.Create(flightReservationId),
             PassengerId = PassengersId.Create(passengerId)
         };
+    }
+    public void Update(int flightReservationId, int passengerId)
+    {
+        FlightReservationId = FlightReservationId.Create(flightReservationId);
+        PassengerId = PassengersId.Create(passengerId);
     }
 }
