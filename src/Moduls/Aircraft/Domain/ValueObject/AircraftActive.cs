@@ -1,6 +1,6 @@
 using System;
 
-namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
+namespace GestorDeVuelosProyectoFinal.Moduls.Aircraft.Domain.ValueObject;
 
 public sealed class AircraftActive
 {
@@ -14,4 +14,5 @@ public sealed class AircraftActive
     {
         return new AircraftActive(value);
     }
+    public override string ToString() => Value.ToString();
 }

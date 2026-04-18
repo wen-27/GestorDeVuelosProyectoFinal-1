@@ -31,6 +31,10 @@
     <Folder Include="src\Moduls\AircraftModels\Infrastructure\Persistence\Seeders\" />
     <Folder Include="src\Moduls\AircraftModels\Infrastructure\Repository\" />
     <Folder Include="src\Moduls\AircraftModels\UI\" />
+    <Folder Include="src\Moduls\CabinTypes\Application\Services\" />
+    <Folder Include="src\Moduls\CabinTypes\Infrastructure\Persistence\" />
+    <Folder Include="src\Moduls\CabinTypes\Infrastructure\Persistence\seeders\" />
+    <Folder Include="src\Moduls\CabinTypes\UI\" />
     <Folder Include="src\Moduls\FlightStatus\Domain\ValueObject\" />
     <Folder Include="src\Moduls\PassengerReservations\Application\Services\" />
     <Folder Include="src\Moduls\PaymentMediumTypes\Domain\Repositories\" />

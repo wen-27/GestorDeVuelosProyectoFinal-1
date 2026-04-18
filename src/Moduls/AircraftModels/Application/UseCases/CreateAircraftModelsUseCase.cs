@@ -16,7 +16,15 @@ public sealed class CreateAircraftModelsUseCase
         _aircraftModelsRepository = aircraftModelsRepository;
         _unitOfWork = unitOfWork;
     }
-    public async Task<AircraftModel> ExecuteAsync(int id, string name, int maxCapacity, decimal? weight, decimal? fuelConsumption, int? cruiseSpeed, int? cruiseAltitude, CancellationToken cancellationToken = default)
+    public async Task<AircraftModel> ExecuteAsync(
+        int id, 
+        string name, 
+        int maxCapacity, 
+        decimal? weight, 
+        decimal? fuelConsumption, 
+        int? cruiseSpeed, 
+        int? cruiseAltitude, 
+        CancellationToken cancellationToken = default)
     {
         var aircraftModelId = AircraftModelId.Create(id);
         var existingAircraftModel = await _aircraftModelsRepository.FindByIdAsync(aircraftModelId, cancellationToken);

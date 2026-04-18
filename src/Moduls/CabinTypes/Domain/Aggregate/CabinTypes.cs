@@ -1,4 +1,3 @@
-using System;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.ValueObject;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Aggregate;
@@ -10,12 +9,33 @@ public sealed class CabinType
 
     private CabinType() { }
 
-    public static CabinType Create(Guid id, string name)
+    // Constructor privado para consistencia interna
+    private CabinType(CabinTypesId id, CabinTypesName name)
+    {
+        Id = id;
+        Name = name;
+    }
+
+    // Para crear una nueva cabina (sin ID aún, ya que es autoincremental)
+    public static CabinType Create(string name)
     {
         return new CabinType
         {
-            Id = CabinTypesId.Create(id),
             Name = CabinTypesName.Create(name)
         };
     }
+
+    // Para reconstruir la entidad desde el Repositorio (cuando ya existe en la BD)
+    public static CabinType FromPrimitives(int id, string name)
+    {
+        return new CabinType(
+            CabinTypesId.Create(id),
+            CabinTypesName.Create(name)
+        );
+    }
+    public void UpdateName(string newName)
+{
+    Name = CabinTypesName.Create(newName);
+}
+    
 }
