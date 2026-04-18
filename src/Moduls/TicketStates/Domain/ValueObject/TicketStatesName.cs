@@ -11,10 +11,10 @@ public sealed class TicketStatesName
     public static TicketStatesName Create(string value)
     {
         if (value.Length > 50)
-            throw new ArgumentException("El nombre del estado de ticket no puede superar los 50 caracteres", nameof(value));
+            throw new ArgumentException("The ticket status name cannot exceed 50 characters", nameof(value));
 
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("El nombre del estado de ticket no es válido", nameof(value));
+            throw new ArgumentException("The ticket status name is invalid", nameof(value));
 
         return new TicketStatesName(value);
     }
