@@ -26,6 +26,7 @@ using GestorDeVuelosProyectoFinal.Moduls.PersonalPositions.Infrastructure.Persis
 using GestorDeVuelosProyectoFinal.Moduls.Personal.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.AvailabilityStates.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Routes.Infrastructure.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.Seasons.Infrastructure.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.StaffAvailability.Infrastructure.Entities;
 
 namespace GestorDeVuelosProyectoFinal.src.Shared.Context;
@@ -62,6 +63,7 @@ public class AppDbContext : DbContext
     public DbSet<FlightAssignmentStaffReferenceEntity> FlightAssignmentStaffReferences { get; set; } = null!;
     public DbSet<FutureFlightReferenceEntity> FutureFlightReferences { get; set; } = null!;
     public DbSet<AvailabilityStateEntity> AvailabilityStates { get; set; } = null!;
+    public DbSet<SeasonEntity> Seasons { get; set; } = null!;
 
     public DbSet<StaffAvailabilityStateReferenceEntity> StaffAvailabilityStateReferences { get; set; } = null!;
     public DbSet<StaffAvailabilityEntity> StaffAvailabilities { get; set; } = null!;
@@ -100,6 +102,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new FlightAssignmentStaffReferenceEntityConfiguration());
         modelBuilder.ApplyConfiguration(new FutureFlightReferenceEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AvailabilityStateEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new SeasonEntityConfiguration());
 
         modelBuilder.ApplyConfiguration(new StaffAvailabilityStateReferenceEntityConfiguration());
 

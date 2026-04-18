@@ -5,19 +5,22 @@ namespace GestorDeVuelosProyectoFinal.Moduls.Seasons.Domain.ValueObject;
 public sealed class SeasonsName
 {
     public string Value { get; }
+
     private SeasonsName(string value) => Value = value;
 
     public static SeasonsName Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("El nombre de la temporada no puede estar vacío", nameof(value));
+            throw new ArgumentException("El nombre de la temporada no puede estar vacio", nameof(value));
 
-        if (value.Length > 100 || value.Length < 2)
-            throw new ArgumentOutOfRangeException(nameof(value), "El nombre de la temporada no puede tener más de 100 caracteres y menos de 2.");
-        
-        if (value.All(char.IsDigit))
-            throw new ArgumentException("El nombre de la temporada no puede contener solo números", nameof(value));
+        var normalized = value.Trim();
 
-        return new SeasonsName(value.Trim());
+        if (normalized.Length > 50 || normalized.Length < 2)
+            throw new ArgumentOutOfRangeException(nameof(value), "El nombre de la temporada no puede tener mas de 50 caracteres ni menos de 2.");
+
+        if (normalized.All(char.IsDigit))
+            throw new ArgumentException("El nombre de la temporada no puede contener solo numeros", nameof(value));
+
+        return new SeasonsName(normalized);
     }
 }

@@ -1,35 +1,50 @@
-using System;
 using GestorDeVuelosProyectoFinal.Moduls.Seasons.Domain.ValueObject;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.Seasons.Domain.Aggregate;
 
 public sealed class Season
 {
-    public SeasonsId Id { get; private set; } = null!;
+    public SeasonsId? Id { get; private set; }
     public SeasonsName Name { get; private set; } = null!;
     public SeasonsDescription Description { get; private set; } = null!;
     public SeasonsPriceFactor PriceFactor { get; private set; } = null!;
 
     private Season() { }
 
-    public static Season Create(
-        Guid id,
-        string name,
-        string? description,
-        decimal priceFactor = 1.0000m)
+    private Season(
+        SeasonsId? id,
+        SeasonsName name,
+        SeasonsDescription description,
+        SeasonsPriceFactor priceFactor)
     {
-        return new Season
-        {
-            Id = SeasonsId.Create(id),
-            Name = SeasonsName.Create(name),
-            Description = SeasonsDescription.Create(description),
-            PriceFactor = SeasonsPriceFactor.Create(priceFactor)
-        };
+        Id = id;
+        Name = name;
+        Description = description;
+        PriceFactor = priceFactor;
     }
 
-    // Método para actualizar el factor de precio si es necesario
-    public void UpdatePriceFactor(decimal newFactor)
+    public static Season Create(string name, string? description, decimal priceFactor = 1.0000m)
     {
-        PriceFactor = SeasonsPriceFactor.Create(newFactor);
+        return new Season(
+            id: null,
+            name: SeasonsName.Create(name),
+            description: SeasonsDescription.Create(description),
+            priceFactor: SeasonsPriceFactor.Create(priceFactor));
+    }
+
+    public static Season FromPrimitives(int id, string name, string? description, decimal priceFactor)
+    {
+        return new Season(
+            id: SeasonsId.Create(id),
+            name: SeasonsName.Create(name),
+            description: SeasonsDescription.Create(description),
+            priceFactor: SeasonsPriceFactor.Create(priceFactor));
+    }
+
+    public void Update(string name, string? description, decimal priceFactor)
+    {
+        Name = SeasonsName.Create(name);
+        Description = SeasonsDescription.Create(description);
+        PriceFactor = SeasonsPriceFactor.Create(priceFactor);
     }
 }

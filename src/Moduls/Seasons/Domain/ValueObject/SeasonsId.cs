@@ -4,12 +4,14 @@ namespace GestorDeVuelosProyectoFinal.Moduls.Seasons.Domain.ValueObject;
 
 public sealed class SeasonsId
 {
-    public Guid Value { get; }
-    private SeasonsId(Guid value) => Value = value;
-    public static SeasonsId Create(Guid value)
+    public int Value { get; }
+
+    private SeasonsId(int value) => Value = value;
+
+    public static SeasonsId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El id de la temporada no es válido", nameof(value));
+        if (value <= 0)
+            throw new ArgumentException("El id de la temporada no es valido", nameof(value));
 
         return new SeasonsId(value);
     }
