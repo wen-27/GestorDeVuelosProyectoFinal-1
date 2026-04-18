@@ -144,7 +144,7 @@ public sealed class AirportsRepository : IAirportsRepository
 
     private async Task EnsureNoActiveRoutesAsync(int airportId)
     {
-        var hasRoutes = await _context.AirportRouteReferences
+        var hasRoutes = await _context.Routes
             .AsNoTracking()
             .AnyAsync(x => x.OriginAirportId == airportId || x.DestinationAirportId == airportId);
 

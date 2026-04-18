@@ -50,6 +50,9 @@
     <Folder Include="src\Moduls\PassengerReservations\Application\Services\" />
     <Folder Include="src\Moduls\PaymentMediumTypes\Domain\Repositories\" />
     <Folder Include="src\Moduls\PeopleEmails\ui\" />
+    <Folder Include="src\Moduls\Routes\Infrastructure\persistence\" />
+    <Folder Include="src\Moduls\Routes\Infrastructure\persistence\seeders\" />
+    <Folder Include="src\Moduls\Routes\ui\" />
     <Folder Include="src\Moduls\StaffAvailability\Infrastructure\Persistencia\" />
     <Folder Include="src\Moduls\StaffAvailability\Infrastructure\Persistencia\seeders\" />
     <Folder Include="src\Moduls\StaffAvailability\ui\" />
