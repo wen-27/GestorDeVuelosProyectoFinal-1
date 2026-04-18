@@ -17,4 +17,14 @@ public sealed class PersonEmailsId
     }
 
     public override string ToString() => Value.ToString();
+=======
+    private PersonEmailsId(int value) => Value = value;
+
+    public static PersonEmailsId Create(int value)
+    {
+        if (value <= 0)
+            throw new ArgumentException("El ID del email de la persona no puede estar vacío.", nameof(value));
+
+        return new PersonEmailsId(value);
+    }
 }
