@@ -21,7 +21,7 @@ public sealed class CabinConfigurationRecord
     public static CabinConfigurationRecord Create(
         Guid id,
         Guid aircraftId,
-        Guid cabinTypeId,
+        int cabinTypeId,
         int startRow,
         int endRow,
         int seatsPerRow,

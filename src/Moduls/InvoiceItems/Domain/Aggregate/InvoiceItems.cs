@@ -15,19 +15,19 @@ public sealed class InvoiceItem
     public InvoiceItemsPrice PrecioUnitario { get; private set; } = null!;
     public InvoiceItemsPrice Subtotal { get; private set; } = null!;
     
-    public Guid? ReservaPasajeroId { get; private set; }
+    public int? ReservaPasajeroId { get; private set; }
 
     private InvoiceItem() { }
 
     public static InvoiceItem Create(
-        Guid id,
-        Guid facturaId,
-        Guid tipoItemId,
+        int id,
+        int facturaId,
+        int tipoItemId,
         string descripcion,
         int cantidad,
         decimal precioUnitario,
         decimal subtotal,
-        Guid? reservaPasajeroId = null)
+        int? reservaPasajeroId = null)
     {
         return new InvoiceItem
         {

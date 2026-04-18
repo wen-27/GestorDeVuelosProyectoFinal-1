@@ -1,4 +1,3 @@
-using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Repositories;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Application.UseCases;
@@ -12,7 +11,7 @@ public class GetAllAircraftUseCase
         _aircraftRepository = aircraftRepository;
     }
 
-    public async Task<IReadOnlyCollection<Domain.Aggregate.Aircraft>> ExecuteAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<src.Moduls.Aircraft.Domain.Aggregate.Aircraft>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         return await _aircraftRepository.GetAllAsync(cancellationToken);
     }

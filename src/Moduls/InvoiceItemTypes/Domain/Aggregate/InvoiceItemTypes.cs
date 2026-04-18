@@ -16,7 +16,7 @@ public sealed class InvoiceItemType
         Name = name;
     }
 
-    public static InvoiceItemType Create(Guid id, string name)
+    public static InvoiceItemType Create(int id, string name)
     {
         return new InvoiceItemType(
             InvoiceItemTypesId.Create(id),

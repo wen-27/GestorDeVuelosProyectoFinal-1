@@ -19,8 +19,8 @@ public sealed class Invoice
     private Invoice() { }
 
     public static Invoice Create(
-        Guid id,
-        Guid reservaId,
+        int id,
+        int reservaId,
         string numeroFactura,
         DateTime fechaEmision,
         decimal subtotal,

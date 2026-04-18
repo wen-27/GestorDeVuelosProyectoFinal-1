@@ -21,9 +21,8 @@ public sealed class Staff
 
     private Staff() { }
 
-    // CORRECCIÓN: Cambiamos 'int' por 'Guid' en los parámetros de entrada
     public static Staff Create(
-        Guid id, Guid personId, Guid positionId, Guid? airlineId, Guid? airportId,
+        int id, Guid personId, Guid positionId, Guid? airlineId, int? airportId,
         DateTime hireDate, bool isActive, DateTime createdIn, DateTime updatedIn)
     {
         return new Staff

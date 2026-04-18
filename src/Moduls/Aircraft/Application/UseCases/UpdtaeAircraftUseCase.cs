@@ -1,4 +1,3 @@
-using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Shared.Contracts;
@@ -16,7 +15,7 @@ public sealed class UpdtaeAircraftUseCase
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Domain.Aggregate.Aircraft> ExecuteAsync(
+    public async Task<src.Moduls.Aircraft.Domain.Aggregate.Aircraft> ExecuteAsync(
         int id, 
         string aircraftRegistration, 
         DateTime dateManufactured, 
@@ -32,7 +31,7 @@ public sealed class UpdtaeAircraftUseCase
             throw new KeyNotFoundException($"Avión con id '{id}' no encontrado.");
         }
 
-        var updatedAircraft = Domain.Aggregate.Aircraft.Create(
+        var updatedAircraft = src.Moduls.Aircraft.Domain.Aggregate.Aircraft.Create(
             id, 
             aircraftRegistration, 
             dateManufactured, 

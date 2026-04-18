@@ -11,7 +11,7 @@ public sealed class FlightRole
 
     private FlightRole() { }
 
-    public static FlightRole Create(Guid id, string name)
+    public static FlightRole Create(int id, string name)
     {
         return new FlightRole
         {

@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using GestorDeVuelosProyectoFinal.Moduls.Continents.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Countries.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Regions.Infrastructure.Persistence.Entities;
-using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.Cities.Infrastructure.Persistence.Entities;
@@ -40,4 +39,3 @@ public class AppDbContext : DbContext
     }
 
 }
-

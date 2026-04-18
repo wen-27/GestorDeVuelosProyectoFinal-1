@@ -8,7 +8,7 @@ public sealed class StaffAvailabilityId
     private StaffAvailabilityId(int value) => Value = value;
     public static StaffAvailabilityId Create(int value)
     {
-        if (value == int.Empty) throw new ArgumentException("El ID de disponibilidad no es válido.");
+        if (value <= 0) throw new ArgumentException("El ID de disponibilidad no es válido.");
         return new StaffAvailabilityId(value);
     }
 }
