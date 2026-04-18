@@ -1,4 +1,5 @@
 using System;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftManufacturers.Infrastructure.Entity;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Entity;
 
@@ -12,12 +13,5 @@ public class AircraftModelsEntity
     public decimal? FuelConsumption { get; set; }
     public int? CruiseSpeed { get; set; }
     public int? CruiseAltitude { get; set; }
-
-    // public required AircraftManufacturersEntity Manufacturer { get; set; } // PARA PONER FK, Pensiente tabla aircraft_manufacturers
+    public AircraftManufacturerEntity? Manufacturer { get; set; }
 }
-
-
-// en aircraft_manufacturersentity poner:
-// public ICollection<AircraftModelsEntity> Models { get; set; } = new List<AircraftModelsEntity>();
-
-// solo eso yo ya lo agregue en configuration

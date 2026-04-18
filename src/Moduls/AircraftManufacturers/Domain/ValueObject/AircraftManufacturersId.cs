@@ -1,17 +1,17 @@
-using System;
-
 namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftManufacturers.Domain.ValueObject;
 
-public sealed class AircraftManufacturersId
+public sealed record AircraftManufacturersId
 {
-    public Guid Value { get; }
-    private AircraftManufacturersId(Guid value) => Value = value;
+    public int Value { get; }
+    private AircraftManufacturersId(int value) => Value = value;
 
-    public static AircraftManufacturersId Create(Guid value)
+    public static AircraftManufacturersId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El id del fabricante de aviones no es válido", nameof(value));
+        if (value <= 0)
+            throw new ArgumentException("El id del fabricante de aviones debe ser un número positivo.", nameof(value));
 
         return new AircraftManufacturersId(value);
     }
+
+    public override string ToString() => Value.ToString();
 }

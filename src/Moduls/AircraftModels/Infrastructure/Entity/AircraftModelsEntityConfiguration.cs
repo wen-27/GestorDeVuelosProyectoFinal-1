@@ -7,7 +7,7 @@ public sealed class AircraftModelsEntityConfiguration : IEntityTypeConfiguration
 {
     public void Configure(EntityTypeBuilder<AircraftModelsEntity> builder)
     {
-        builder.ToTable("aircraft_manufacturers");
+        builder.ToTable("aircraft_models");
 
         builder.HasKey(m => m.Id);
 
@@ -44,5 +44,10 @@ public sealed class AircraftModelsEntityConfiguration : IEntityTypeConfiguration
         builder.Property(m => m.CruiseAltitude)
             .HasColumnName("cruise_altitude")
             .HasColumnType("int");
+
+        builder.HasOne(m => m.Manufacturer)
+            .WithMany(m => m.Models)
+            .HasForeignKey(m => m.AircraftManufacturerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
