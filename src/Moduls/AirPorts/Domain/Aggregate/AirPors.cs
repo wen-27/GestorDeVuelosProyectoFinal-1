@@ -1,28 +1,56 @@
-using System;
 using GestorDeVuelosProyectoFinal.Moduls.Airports.Domain.ValueObject;
-using GestorDeVuelosProyectoFinal.Moduls.Cities.Domain.ValueObject;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.Airports.Domain.Aggregate;
 
 public sealed class Airport
 {
-    public AirportsId Id { get; private set; } = null!;
+    public AirportsId? Id { get; private set; }
     public AirportsName Name { get; private set; } = null!;
     public AirportsIataCode IataCode { get; private set; } = null!;
     public AirportsIcaoCode IcaoCode { get; private set; } = null!;
-    public CityId CityId { get; private set; } = null!; // <--- REVISA SI ES CityId o CitiesId (como el de países)
+    public CityId CityId { get; private set; } = null!;
 
     private Airport() { }
 
-    public static Airport Create(int id, string name, string iataCode, string? icaoCode, int cityId)
+    private Airport(
+        AirportsId? id,
+        AirportsName name,
+        AirportsIataCode iataCode,
+        AirportsIcaoCode icaoCode,
+        CityId cityId)
     {
-        return new Airport
-        {
-            Id = AirportsId.Create(id),
-            Name = AirportsName.Create(name),
-            IataCode = AirportsIataCode.Create(iataCode),
-            IcaoCode = AirportsIcaoCode.Create(icaoCode),
-            CityId = CityId.Create(cityId) // <--- Asegúrate que coincida con tu clase de ciudades
-        };
+        Id = id;
+        Name = name;
+        IataCode = iataCode;
+        IcaoCode = icaoCode;
+        CityId = cityId;
+    }
+
+    public static Airport Create(string name, string iataCode, string? icaoCode, int cityId)
+    {
+        return new Airport(
+            id: null,
+            name: AirportsName.Create(name),
+            iataCode: AirportsIataCode.Create(iataCode),
+            icaoCode: AirportsIcaoCode.Create(icaoCode),
+            cityId: CityId.Create(cityId));
+    }
+
+    public static Airport FromPrimitives(int id, string name, string iataCode, string? icaoCode, int cityId)
+    {
+        return new Airport(
+            id: AirportsId.Create(id),
+            name: AirportsName.Create(name),
+            iataCode: AirportsIataCode.Create(iataCode),
+            icaoCode: AirportsIcaoCode.Create(icaoCode),
+            cityId: CityId.Create(cityId));
+    }
+
+    public void Update(string name, string iataCode, string? icaoCode, int cityId)
+    {
+        Name = AirportsName.Create(name);
+        IataCode = AirportsIataCode.Create(iataCode);
+        IcaoCode = AirportsIcaoCode.Create(icaoCode);
+        CityId = CityId.Create(cityId);
     }
 }
