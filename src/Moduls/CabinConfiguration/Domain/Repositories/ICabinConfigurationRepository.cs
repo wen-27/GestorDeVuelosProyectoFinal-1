@@ -1,20 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using GestorDeVuelosProyectoFinal.Moduls.CabinConfiguration.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.Moduls.CabinConfiguration.Domain.ValueObject;
+using CabinConfigurationAggregate = GestorDeVuelosProyectoFinal.Moduls.CabinConfiguration.Domain.Aggregate.CabinConfiguration;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.CabinConfiguration.Domain.Repositories;
 
 public interface ICabinConfigurationRepository
 {
-    Task<CabinConfigurationRecord?> GetByIdAsync(CabinConfigurationId id);
-    
-    // Cambiado a Guid para evitar el error de AircraftId no encontrado
-    Task<IEnumerable<CabinConfigurationRecord>> GetByAircraftIdAsync(Guid aircraftId);
+    Task<CabinConfigurationAggregate?> GetByIdAsync(CabinConfigurationId id);
+    Task<CabinConfigurationAggregate?> GetByAircraftAndCabinTypeAsync(int aircraftId, int cabinTypeId);
 
-    Task<IEnumerable<CabinConfigurationRecord>> GetAllAsync();
-    
-    Task SaveAsync(CabinConfigurationRecord configuration);
+    Task<IEnumerable<CabinConfigurationAggregate>> GetByAircraftIdAsync(int aircraftId);
+
+    Task<IEnumerable<CabinConfigurationAggregate>> GetAllAsync();
+
+    Task SaveAsync(CabinConfigurationAggregate configuration);
+    Task UpdateAsync(CabinConfigurationAggregate configuration);
     Task DeleteAsync(CabinConfigurationId id);
 }
