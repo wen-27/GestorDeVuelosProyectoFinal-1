@@ -1,21 +1,36 @@
-using System;
 using GestorDeVuelosProyectoFinal.Moduls.AvailabilityStates.Domain.ValueObject;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.AvailabilityStates.Domain.Aggregate;
 
 public sealed class AvailabilityState
 {
-    public AvailabilityStatesId Id { get; private set; } = null!;
+    public AvailabilityStatesId? Id { get; private set; }
     public AvailabilityStatesName Name { get; private set; } = null!;
 
     private AvailabilityState() { }
 
-    public static AvailabilityState Create(Guid id, string name)
+    private AvailabilityState(AvailabilityStatesId? id, AvailabilityStatesName name)
     {
-        return new AvailabilityState
-        {
-            Id = AvailabilityStatesId.Create(id),
-            Name = AvailabilityStatesName.Create(name)
-        };
+        Id = id;
+        Name = name;
+    }
+
+    public static AvailabilityState Create(string name)
+    {
+        return new AvailabilityState(
+            id: null,
+            name: AvailabilityStatesName.Create(name));
+    }
+
+    public static AvailabilityState FromPrimitives(int id, string name)
+    {
+        return new AvailabilityState(
+            id: AvailabilityStatesId.Create(id),
+            name: AvailabilityStatesName.Create(name));
+    }
+
+    public void Update(string name)
+    {
+        Name = AvailabilityStatesName.Create(name);
     }
 }
