@@ -11,4 +11,7 @@ public sealed class StaffEntity
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    // Cuando se desacople el modulo Staff del modulo Personal, aqui puede ir la navegacion:
+    // public ICollection<StaffAvailabilityEntity> Availabilities { get; set; } = new List<StaffAvailabilityEntity>();
 }

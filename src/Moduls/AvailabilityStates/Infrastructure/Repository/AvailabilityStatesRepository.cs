@@ -34,8 +34,8 @@ public sealed class AvailabilityStatesRepository : IAvailabilityStatesRepository
     {
         var entities = await (
             from state in _context.AvailabilityStates.AsNoTracking()
-            join reference in _context.StaffAvailabilityStateReferences.AsNoTracking() on state.Id equals reference.AvailabilityStateId
-            where reference.StaffId == staffId.Value
+            join availability in _context.StaffAvailabilities.AsNoTracking() on state.Id equals availability.AvailabilityStatusId
+            where availability.StaffId == staffId.Value
             orderby state.Name
             select state
         ).Distinct().ToListAsync();

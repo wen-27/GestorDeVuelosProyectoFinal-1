@@ -8,13 +8,13 @@ namespace GestorDeVuelosProyectoFinal.Moduls.StaffAvailability.Domain.Repositori
 
 public interface IStaffAvailabilityRepository
 {
-
     Task<StaffAvailabilityRecord?> GetByIdAsync(StaffAvailabilityId id);
-    
     Task<IEnumerable<StaffAvailabilityRecord>> GetByStaffIdAsync(PersonalId staffId);
-
+    Task<IEnumerable<StaffAvailabilityRecord>> GetByDateRangeAsync(DateTime startsAt, DateTime endsAt);
     Task<IEnumerable<StaffAvailabilityRecord>> GetAllAsync();
-    
+    Task<bool> HasBlockingAvailabilityAsync(PersonalId staffId, DateTime startsAt, DateTime endsAt);
     Task SaveAsync(StaffAvailabilityRecord availability);
-    Task DeleteAsync(StaffAvailabilityId id);
+    Task UpdateAsync(StaffAvailabilityRecord availability);
+    Task DeleteByIdAsync(StaffAvailabilityId id);
+    Task<int> DeleteByStaffIdAsync(PersonalId staffId);
 }
