@@ -10,13 +10,17 @@ public sealed class CheckinState
 
     private CheckinState() { }
 
-    public static CheckinState Create(Guid id, string name)
+    public static CheckinState Create(int id, string name)
     {
         return new CheckinState
         {
             Id = CheckinStatesId.Create(id),
             Name = CheckinStatesName.Create(name)
         };
+    }
+    internal void SetId(int id)
+    {
+        Id = CheckinStatesId.Create(id);
     }
 
     public void UpdateName(string newName)

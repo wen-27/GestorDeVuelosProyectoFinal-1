@@ -4,13 +4,13 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.CheckinStates.Domain.ValueObjec
 
 public sealed class CheckinStatesId
 {
-    public Guid Value { get; }
+    public int Value { get; }
 
-    private CheckinStatesId(Guid value) => Value = value;
+    private CheckinStatesId(int value) => Value = value;
 
-    public static CheckinStatesId Create(Guid value)
+    public static CheckinStatesId Create(int value)
     {
-        if (value == Guid.Empty)
+        if (value <= 0)
             throw new ArgumentException("El id del estado de check-in no es válido", nameof(value));
 
         return new CheckinStatesId(value);
