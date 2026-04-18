@@ -1,70 +1,152 @@
-/*using Microsoft.EntityFrameworkCore;
-using GestorDeVuelosProyectoFinal.Moduls.Addresses.Domain.Aggregate; 
-using GestorDeVuelosProyectoFinal.Moduls.Addresses.Domain.ValueObject;
+using Microsoft.EntityFrameworkCore;
 using GestorDeVuelosProyectoFinal.src.Shared.Context;
+using GestorDeVuelosProyectoFinal.Moduls.Addresses.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.Moduls.Addresses.Domain.Repositories;
+using GestorDeVuelosProyectoFinal.Moduls.Addresses.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.Moduls.Cities.Domain.ValueObject;
-//using GestorDeVuelosProyectoFinal.src.Moduls.Addresses.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.Addresses.Infrastructure.Persistence.Entities;
 
+namespace GestorDeVuelosProyectoFinal.Moduls.Addresses.Infrastructure.Repository;
 
-namespace GestorDeVuelosProyectoFinal.src.Moduls.Addresses.Infrastructure.Repository;
-
-public sealed class AddressesRepository : IAddressRepository
+public sealed class AddressRepository : IAddressRepository
 {
-    private readonly AppDbContext _dbcontext;
+    private readonly AppDbContext _context;
 
-    public AddressesRepository(AppDbContext dbContext)
+    public AddressRepository(AppDbContext context)
     {
-        _dbcontext = dbContext;
+        _context = context;
     }
 
-    public Task<bool> DeleteAsync(AddressesId id, CancellationToken cancellationToken = default)
+    public async Task<Address?> GetByIdAsync(AddressesId id, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        // Importante: Asegúrate de que en AppDbContext la propiedad se llame 'Addresses'
+        var entity = await _context.Addresses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id.Value, ct);
+
+        return entity == null ? null : MapToDomain(entity);
     }
 
-    public Task<IReadOnlyCollection<Address>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<Address?> GetByStreetAndNumberAsync(string streetName, string? number, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var streetLower = streetName.Trim().ToLower();
+        
+        var entity = await _context.Addresses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => 
+                x.StreetName.ToLower() == streetLower && 
+                x.Number == number, ct);
+
+        return entity == null ? null : MapToDomain(entity);
     }
 
-    public Task<IReadOnlyCollection<Address>> GetByCityAsync(CityId cityId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<Address>> GetAllAsync(CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var entities = await _context.Addresses.AsNoTracking().ToListAsync(ct);
+        return entities.Select(MapToDomain).ToList();
     }
 
-    public async Task<Address?> GetByIdAsync(AddressesId id, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(Address address, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(id.Value.ToString()))
-            throw new ArgumentException("El ID de la dirección no puede estar vacío.", nameof(id));
-        var address = await _dbcontext.Addresses
-            .FirstOrDefaultAsync(a => a.Id == id.Value, cancellationToken);
-        if (address == null)
-            return null;
-        return new Address(new AddressesId(address.Id),new RoadTypeId(address.ViaType_id),new AddressesNameVia(address.PathName),new AddressesNumber(address.Number),new AddressesComplement(address.Complement),new AddressesPostalCode(address.Postal_code),new CityId(address.Cities_id));
+        var entity = MapToEntity(address);
+        await _context.Addresses.AddAsync(entity, ct);
     }
 
-    public Task<Address?> GetByNameAsync(AddressesNameVia name, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Address address, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var entity = MapToEntity(address);
+        _context.Addresses.Update(entity);
+        await Task.CompletedTask;
     }
 
-    public Task<IReadOnlyCollection<Address>> GetByPostalCodeAsync(AddressesPostalCode postalCode, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(AddressesId id, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        // FindAsync no acepta CancellationToken de la misma forma que FirstOrDefault
+        var entity = await _context.Addresses.FindAsync(new object[] { id.Value }, ct);
+        if (entity == null) return false;
+
+        _context.Addresses.Remove(entity);
+        return true;
     }
 
-    public Task SaveAsync(Address address, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteByStreetAndNumberAsync(string streetName, string? number, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var streetLower = streetName.Trim().ToLower();
+        
+        var entity = await _context.Addresses
+            .FirstOrDefaultAsync(x => 
+                x.StreetName.ToLower() == streetLower && 
+                x.Number == number, ct);
+
+        if (entity == null) return false;
+
+        _context.Addresses.Remove(entity);
+        return true;
     }
 
-    public Task UpdateAsync(Address address, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<Address>> GetByCityAsync(CityId cityId, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var entities = await _context.Addresses
+            .AsNoTracking()
+            .Where(x => x.CityId == cityId.Value)
+            .ToListAsync(ct);
+        return entities.Select(MapToDomain).ToList();
     }
 
+    public async Task<Address?> GetByNameAsync(AddressesNameVia name, CancellationToken ct = default)
+    {
+        var nameLower = name.Value.ToLower();
+        var entity = await _context.Addresses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.StreetName.ToLower() == nameLower, ct);
+        return entity == null ? null : MapToDomain(entity);
+    }
 
+    public async Task<IReadOnlyCollection<Address>> GetByPostalCodeAsync(AddressesPostalCode postalCode, CancellationToken ct = default)
+    {
+        var entities = await _context.Addresses
+            .AsNoTracking()
+            .Where(x => x.PostalCode == postalCode.Value)
+            .ToListAsync(ct);
+        return entities.Select(MapToDomain).ToList();
+    }
 
-    // ... Implementar los demás métodos siguiendo la misma lógica
-}*/
+    public async Task<IReadOnlyCollection<Address>> GetByStreetTypeAsync(int streetTypeId, CancellationToken ct = default)
+    {
+        var entities = await _context.Addresses
+            .AsNoTracking()
+            .Where(x => x.StreetTypeId == streetTypeId)
+            .ToListAsync(ct);
+            
+        return entities.Select(MapToDomain).ToList();
+    }
+
+    // --- MAPPERS INTERNOS ---
+
+    private static Address MapToDomain(AddressEntity entity)
+    {
+        return Address.Create(
+            entity.Id,
+            entity.StreetTypeId,
+            entity.StreetName,
+            entity.Number,
+            entity.Complement,
+            entity.PostalCode,
+            entity.CityId
+        );
+    }
+
+    private static AddressEntity MapToEntity(Address domain)
+    {
+        return new AddressEntity
+        {
+            Id = domain.Id.Value,
+            StreetTypeId = domain.RoadTypeId.Value,
+            StreetName = domain.StreetName.Value,
+            Number = domain.Number.Value,
+            Complement = domain.Complement.Value,
+            CityId = domain.CityId.Value,
+            PostalCode = domain.PostalCode.Value
+        };
+    }
+}

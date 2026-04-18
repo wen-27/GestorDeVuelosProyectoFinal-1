@@ -10,7 +10,7 @@ public sealed class CountryId
 
     public static CountryId Create(int value)
     {
-        if (value <= 0)
+        if (value < 0)
             throw new ArgumentException("El id del país no es válido", nameof(value));
 
         return new CountryId(value);

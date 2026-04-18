@@ -8,6 +8,7 @@ using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.Cities.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.StreetTypes.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.Addresses.Infrastructure.Persistence.Entities;
 
 
 
@@ -21,7 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<CityEntity> Cities { get; set; } = null!;
     public DbSet<AircraftModelsEntity> AircraftModels { get; set; } 
     public DbSet<StreetTypeEntity> StreetTypes { get; set; }
-
+    public DbSet<AddressEntity> Addresses { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -35,6 +36,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CityEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AircraftModelsEntityConfiguration());
         modelBuilder.ApplyConfiguration(new StreetTypeEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AddressEntityConfiguration());
     }
 
 }
