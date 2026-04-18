@@ -1,17 +1,15 @@
-using System;
-
 namespace GestorDeVuelosProyectoFinal.Moduls.AvailabilityStates.Domain.ValueObject;
 
-public sealed class AvailabilityStatesId 
+public sealed class AvailabilityStatesId
 {
-    public Guid Value { get; }
+    public int Value { get; }
 
-    private AvailabilityStatesId(Guid value) => Value = value;
+    private AvailabilityStatesId(int value) => Value = value;
 
-    public static AvailabilityStatesId Create(Guid value)
+    public static AvailabilityStatesId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El id del estado de disponibilidad no es válido", nameof(value));
+        if (value < 0)
+            throw new ArgumentException("El id del estado de disponibilidad no es válido.", nameof(value));
 
         return new AvailabilityStatesId(value);
     }
