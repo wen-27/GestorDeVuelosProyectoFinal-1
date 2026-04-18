@@ -2,16 +2,19 @@ using System;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.PersonEmails.Domain.ValueObject;
 
-public sealed record PersonEmailsId
+public sealed class PersonEmailsId
 {
-    public Guid Value { get; }
-    private PersonEmailsId(Guid value) => Value = value;
+    public int Value { get; }
 
-    public static PersonEmailsId Create(Guid value)
+    private PersonEmailsId(int value) => Value = value;
+
+    public static PersonEmailsId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El ID del email de la persona no puede estar vacío.", nameof(value));
+        if (value < 0)
+            throw new ArgumentException("El id del email de la persona no es valido.", nameof(value));
 
         return new PersonEmailsId(value);
     }
+
+    public override string ToString() => Value.ToString();
 }
