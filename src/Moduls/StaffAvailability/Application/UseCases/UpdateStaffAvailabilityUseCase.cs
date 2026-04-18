@@ -25,4 +25,3 @@ public sealed class UpdateStaffAvailabilityUseCase
         await _repository.UpdateAsync(availability);
         await _unitOfWork.SaveChangesAsync();
     }
-}

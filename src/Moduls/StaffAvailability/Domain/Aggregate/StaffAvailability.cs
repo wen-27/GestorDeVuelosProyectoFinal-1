@@ -5,8 +5,7 @@ using GestorDeVuelosProyectoFinal.Moduls.AvailabilityStates.Domain.ValueObject;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.StaffAvailability.Domain.Aggregate;
 
-// CAMBIO: Renombrado de StaffAvailability a StaffAvailabilityRecord
-public sealed class StaffAvailabilityRecord 
+public sealed class StaffAvailabilityRecord
 {
     public StaffAvailabilityId? Id { get; private set; }
     public PersonalId StaffId { get; private set; } = null!;
@@ -67,6 +66,22 @@ public sealed class StaffAvailabilityRecord
         DateTime endDate,
         string? observation)
     {
+
+        return new StaffAvailabilityRecord(
+            id: StaffAvailabilityId.Create(id),
+            staffId: PersonalId.Create(staffId),
+            stateId: AvailabilityStatesId.Create(stateId),
+            dates: StaffAvailabilityDates.Create(startDate, endDate),
+            observation: StaffAvailabilityObservation.Create(observation));
+    }
+
+    public void Update(
+        int staffId,
+        int stateId,
+        DateTime startDate,
+        DateTime endDate,
+        string? observation)
+
         StaffId = PersonalId.Create(staffId);
         StateId = AvailabilityStatesId.Create(stateId);
         Dates = StaffAvailabilityDates.Create(startDate, endDate);

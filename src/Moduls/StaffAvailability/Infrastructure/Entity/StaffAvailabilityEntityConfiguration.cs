@@ -58,4 +58,3 @@ public sealed class StaffAvailabilityEntityConfiguration : IEntityTypeConfigurat
         // por la entidad de Staff y, si agregas navegacion, en Staff debes declarar algo como:
         // public ICollection<StaffAvailabilityEntity> Availabilities { get; set; } = new List<StaffAvailabilityEntity>();
     }
-}
