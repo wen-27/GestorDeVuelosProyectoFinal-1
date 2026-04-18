@@ -26,7 +26,7 @@ public sealed class CreateRouteStopoverUseCase
 
     public async Task ExecuteAsync(int routeId, int stopoverAirportId, int stopOrder, int layoverMin, CancellationToken cancellationToken = default)
     {
-        var routeExists = await _context.AirportRouteReferences.AsNoTracking()
+        var routeExists = await _context.Routes.AsNoTracking()
             .AnyAsync(x => x.Id == routeId, cancellationToken);
         if (!routeExists)
             throw new InvalidOperationException($"No se encontro la ruta con ID {routeId}.");

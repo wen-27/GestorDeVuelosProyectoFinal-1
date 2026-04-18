@@ -1,4 +1,5 @@
 using GestorDeVuelosProyectoFinal.Moduls.Airports.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.Routes.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -37,7 +38,7 @@ public sealed class RouteStopoversEntityConfiguration : IEntityTypeConfiguration
             .IsUnique()
             .HasDatabaseName("uk_route_stopovers_route_stop_order");
 
-        builder.HasOne<AirportRouteReferenceEntity>()
+        builder.HasOne<RouteEntity>()
             .WithMany()
             .HasForeignKey(x => x.RouteId)
             .OnDelete(DeleteBehavior.Cascade)

@@ -29,7 +29,7 @@ public sealed class UpdateRouteStopoverUseCase
         if (existing is null)
             throw new InvalidOperationException($"No se encontro la escala con ID {id}.");
 
-        var routeExists = await _context.AirportRouteReferences.AsNoTracking()
+        var routeExists = await _context.Routes.AsNoTracking()
             .AnyAsync(x => x.Id == routeId, cancellationToken);
         if (!routeExists)
             throw new InvalidOperationException($"No se encontro la ruta con ID {routeId}.");

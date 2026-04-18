@@ -28,6 +28,7 @@ using GestorDeVuelosProyectoFinal.Moduls.AvailabilityStates.Infrastructure.Persi
 using GestorDeVuelosProyectoFinal.Moduls.Routes.Infrastructure.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.StaffAvailability.Infrastructure.Entities;
 using GestorDeVuelosProyectoFinal.src.Moduls.RouteStopovers.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.PassengerTypes.Infrastructure.Entity;
 
 namespace GestorDeVuelosProyectoFinal.src.Shared.Context;
 
@@ -69,6 +70,8 @@ public class AppDbContext : DbContext
 
     public DbSet<RouteStopoversEntity> RouteStopovers { get; set; } = null!;
 
+    public DbSet<PassengerTypeEntity> PassengerTypes { get; set; } = null!;
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -109,6 +112,8 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new StaffAvailabilityEntityConfiguration());
 
         modelBuilder.ApplyConfiguration(new RouteStopoversEntityConfiguration());
+
+        modelBuilder.ApplyConfiguration(new PassengerTypeEntityConfiguration());
     }
 
 }

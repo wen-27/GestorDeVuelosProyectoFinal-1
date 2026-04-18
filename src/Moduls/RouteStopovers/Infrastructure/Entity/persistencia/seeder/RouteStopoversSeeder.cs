@@ -24,7 +24,7 @@ public sealed class RouteStopoversSeeder
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        var routes = await _context.AirportRouteReferences
+        var routes = await _context.Routes
             .AsNoTracking()
             .OrderBy(x => x.Id)
             .Take(5)

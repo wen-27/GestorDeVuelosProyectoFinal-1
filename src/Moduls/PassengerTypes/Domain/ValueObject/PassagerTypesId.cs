@@ -1,16 +1,18 @@
-using System;
-
 namespace GestorDeVuelosProyectoFinal.Moduls.PassengerTypes.Domain.ValueObject;
 
 public sealed class PassengerTypesId
 {
-    public Guid Value { get; }
-    private PassengerTypesId(Guid value) => Value = value;
+    public int Value { get; }
 
-    public static PassengerTypesId Create(Guid value)
+    private PassengerTypesId(int value) => Value = value;
+
+    public static PassengerTypesId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El ID del tipo de pasajero no es válido.");
+        if (value <= 0)
+            throw new ArgumentException("El id del tipo de pasajero no es valido.");
+
         return new PassengerTypesId(value);
     }
+
+    public override string ToString() => Value.ToString();
 }
