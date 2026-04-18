@@ -22,7 +22,7 @@ public sealed class Staff
     private Staff() { }
 
     public static Staff Create(
-        int id, Guid personId, Guid positionId, Guid? airlineId, int? airportId,
+        int id, int personId, Guid positionId, Guid? airlineId, int? airportId,
         DateTime hireDate, bool isActive, DateTime createdIn, DateTime updatedIn)
     {
         return new Staff

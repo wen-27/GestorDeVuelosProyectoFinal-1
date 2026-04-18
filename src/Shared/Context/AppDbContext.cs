@@ -13,6 +13,7 @@ using GestorDeVuelosProyectoFinal.src.Moduls.CabinConfiguration.Infrastructure.E
 using GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.DocumentTypes.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.src.Moduls.EmailDomains.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.People.Infrastructure.Persistence.Entities;
 
 
 
@@ -34,6 +35,7 @@ public class AppDbContext : DbContext
     public DbSet<EmailDomainsEntity> EmailDomains { get; set; } = null!;
 
     public DbSet<DocumentTypeEntity> DocumentTypes { get; set; } = null!;
+    public DbSet<PersonEntity> Persons { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -52,7 +54,9 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CabinTypeEntityConfiguration());
         modelBuilder.ApplyConfiguration(new CabinConfigurationEntityConfiguration());
         modelBuilder.ApplyConfiguration(new DocumentTypeEntityConfiguration());
+
         modelBuilder.ApplyConfiguration(new EmailDomainsEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new PersonEntityConfiguration());
     }
 
 }
