@@ -5,11 +5,11 @@ using GestorDeVuelosProyectoFinal.src.Shared.ui;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.UI;
 
-public sealed class AircraftModelsMenu : IModuleUI
+public sealed class AircraftModelsConsoleUI : IModuleUI
 {
     private readonly IAircraftModelsService _service;
 
-    public AircraftModelsMenu(IAircraftModelsService service)
+    public AircraftModelsConsoleUI(IAircraftModelsService service)
     {
         _service = service;
     }
@@ -62,7 +62,7 @@ public sealed class AircraftModelsMenu : IModuleUI
     {
         var id = PromptPositiveInt("ID del modelo:");
         var item = await _service.GetByIdAsync(id, cancellationToken);
-        RenderTable(item is null ? [] : [item], $"Resultado para ID {id}");
+        RenderTable(item is null ? Array.Empty<AircraftModel>() : new[] { item }, $"Resultado para ID {id}");
         Pause();
     }
 
@@ -70,7 +70,7 @@ public sealed class AircraftModelsMenu : IModuleUI
     {
         var name = PromptRequiredText("Nombre del modelo:");
         var item = await _service.GetByNameAsync(name, cancellationToken);
-        RenderTable(item is null ? [] : [item], $"Resultado para {name}");
+        RenderTable(item is null ? Array.Empty<AircraftModel>() : new[] { item }, $"Resultado para {name}");
         Pause();
     }
 

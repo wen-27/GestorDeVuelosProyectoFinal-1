@@ -27,6 +27,7 @@ using GestorDeVuelosProyectoFinal.Moduls.Personal.Infrastructure.Persistence.Ent
 using GestorDeVuelosProyectoFinal.Moduls.AvailabilityStates.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Routes.Infrastructure.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.StaffAvailability.Infrastructure.Entities;
+using GestorDeVuelosProyectoFinal.src.Moduls.RouteStopovers.Infrastructure.Entity;
 
 namespace GestorDeVuelosProyectoFinal.src.Shared.Context;
 
@@ -66,6 +67,8 @@ public class AppDbContext : DbContext
     public DbSet<StaffAvailabilityStateReferenceEntity> StaffAvailabilityStateReferences { get; set; } = null!;
     public DbSet<StaffAvailabilityEntity> StaffAvailabilities { get; set; } = null!;
 
+    public DbSet<RouteStopoversEntity> RouteStopovers { get; set; } = null!;
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -104,6 +107,8 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new StaffAvailabilityStateReferenceEntityConfiguration());
 
         modelBuilder.ApplyConfiguration(new StaffAvailabilityEntityConfiguration());
+
+        modelBuilder.ApplyConfiguration(new RouteStopoversEntityConfiguration());
     }
 
 }

@@ -62,7 +62,7 @@ public sealed class AircraftMenu : IModuleUI
     {
         var id = PromptPositiveInt("ID de la aeronave:");
         var item = await _service.GetByIdAsync(id, cancellationToken);
-        RenderTable(item is null ? [] : [item], $"Resultado para ID {id}");
+        RenderTable(item is null ? Array.Empty<AircraftAggregate>() : new[] { item }, $"Resultado para ID {id}");
         Pause();
     }
 
@@ -70,7 +70,7 @@ public sealed class AircraftMenu : IModuleUI
     {
         var registration = PromptRequiredText("Matrícula:");
         var item = await _service.GetByRegistrationAsync(registration, cancellationToken);
-        RenderTable(item is null ? [] : [item], $"Resultado para {registration}");
+        RenderTable(item is null ? Array.Empty<AircraftAggregate>() : new[] { item }, $"Resultado para {registration}");
         Pause();
     }
 
