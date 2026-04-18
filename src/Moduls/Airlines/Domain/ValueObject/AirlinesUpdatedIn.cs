@@ -1,10 +1,9 @@
-using System;
-
 namespace GestorDeVuelosProyectoFinal.Moduls.Airlines.Domain.ValueObject;
 
 public sealed record AirlinesUpdatedIn
 {
     public DateTime Value { get; }
+
     private AirlinesUpdatedIn(DateTime value) => Value = value;
 
     public static AirlinesUpdatedIn Create(DateTime value)

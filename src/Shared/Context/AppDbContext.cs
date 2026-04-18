@@ -18,6 +18,11 @@ using GestorDeVuelosProyectoFinal.src.Moduls.PeopleEmails.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.PeoplePhones.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.PhoneCodes.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.src.Moduls.Customers.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.Airlines.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.Airports.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.PersonalPositions.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.Personal.Infrastructure.Persistence.Entities;
 
 namespace GestorDeVuelosProyectoFinal.src.Shared.Context;
 
@@ -41,6 +46,17 @@ public class AppDbContext : DbContext
     public DbSet<PersonEntity> Persons { get; set; } = null!;
     public DbSet<PeoplePhoneEntity> PeoplePhones { get; set; } = null!;
     public DbSet<PhoneCodeEntity> PhoneCodes { get; set; } = null!;
+    public DbSet<AirlineEntity> Airlines { get; set; } = null!;
+
+    public DbSet<AirportEntity> Airports { get; set; } = null!;
+    public DbSet<AirportRouteReferenceEntity> AirportRouteReferences { get; set; } = null!;
+    public DbSet<AirportAirlineEntity> AirportAirlines { get; set; } = null!;
+    public DbSet<PersonalPositionEntity> PersonalPositions { get; set; } = null!;
+    public DbSet<StaffPositionReferenceEntity> StaffPositionReferences { get; set; } = null!;
+    public DbSet<StaffEntity> Staffs { get; set; } = null!;
+    public DbSet<FlightAssignmentStaffReferenceEntity> FlightAssignmentStaffReferences { get; set; } = null!;
+    public DbSet<FutureFlightReferenceEntity> FutureFlightReferences { get; set; } = null!;
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,6 +80,15 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CustomerEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PeoplePhoneEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PhoneCodeEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AirlineEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AirportEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AirportRouteReferenceEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AirportAirlineEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new PersonalPositionEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new StaffPositionReferenceEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new StaffEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new FlightAssignmentStaffReferenceEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new FutureFlightReferenceEntityConfiguration());
     }
 
 }

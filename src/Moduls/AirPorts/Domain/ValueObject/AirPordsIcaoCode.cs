@@ -1,8 +1,8 @@
-using System;
+using System.Text.RegularExpressions;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.Airports.Domain.ValueObject;
 
-public sealed class AirportsIcaoCode // Cambiado a class para evitar ambigüedad de record
+public sealed class AirportsIcaoCode
 {
     public string? Value { get; }
 
@@ -11,16 +11,11 @@ public sealed class AirportsIcaoCode // Cambiado a class para evitar ambigüedad
     public static AirportsIcaoCode Create(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-        {
             return new AirportsIcaoCode(null);
-        }
 
-        var code = value.Trim().ToUpper();
-        
-        if (code.Length != 4)
-        {
-            throw new ArgumentException("El código ICAO debe tener exactamente 4 caracteres.");
-        }
+        var code = value.Trim().ToUpperInvariant();
+        if (!Regex.IsMatch(code, "^[A-Z]{4}$"))
+            throw new ArgumentException("El código ICAO debe tener exactamente 4 letras.");
 
         return new AirportsIcaoCode(code);
     }

@@ -1,16 +1,15 @@
-using System;
-
-namespace GestorDeVuelosProyectoFinal.src.Moduls.AirportAirline.Domain.ValueObject;
+namespace GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Domain.ValueObject;
 
 public sealed class AirportAirlineId
 {
-    public Guid Value { get; }
-    private AirportAirlineId(Guid value) => Value = value;
+    public int Value { get; }
 
-    public static AirportAirlineId Create(Guid value)
+    private AirportAirlineId(int value) => Value = value;
+
+    public static AirportAirlineId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El id del aeropuerto-aerolínea no es válido", nameof(value));
+        if (value < 0)
+            throw new ArgumentException("El id de la operación aeropuerto-aerolínea no es válido.", nameof(value));
 
         return new AirportAirlineId(value);
     }
