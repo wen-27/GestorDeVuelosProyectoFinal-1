@@ -17,6 +17,7 @@ using GestorDeVuelosProyectoFinal.Moduls.People.Infrastructure.Persistence.Entit
 using GestorDeVuelosProyectoFinal.src.Moduls.PeopleEmails.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.PeoplePhones.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.PhoneCodes.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.src.Moduls.Customers.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.Airlines.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Airports.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Infrastructure.Persistence.Entities;
