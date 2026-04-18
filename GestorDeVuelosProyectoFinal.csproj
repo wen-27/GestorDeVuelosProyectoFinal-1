@@ -41,6 +41,8 @@
     <Folder Include="src\Moduls\CabinTypes\Infrastructure\Persistence\" />
     <Folder Include="src\Moduls\CabinTypes\Infrastructure\Persistence\seeders\" />
     <Folder Include="src\Moduls\CabinTypes\UI\" />
+    <Folder Include="src\Moduls\Customers\Infrastructure\Persistence\" />
+    <Folder Include="src\Moduls\Customers\Infrastructure\Persistence\Seeders\" />
     <Folder Include="src\Moduls\EmailDomains\Infrastructure\Persistence\" />
     <Folder Include="src\Moduls\EmailDomains\Infrastructure\Persistence\seeders\" />
     <Folder Include="src\Moduls\EmailDomains\ui\" />

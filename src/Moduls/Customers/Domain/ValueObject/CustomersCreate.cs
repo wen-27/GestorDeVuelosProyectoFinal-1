@@ -2,16 +2,17 @@ using System;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Customers.Domain.ValueObject;
 
-public sealed class CustomersCreadoEn
+public sealed class CustomersCreatedAt
 {
     public DateTime Value { get; }
-    private CustomersCreadoEn(DateTime value) => Value = value;
 
-    public static CustomersCreadoEn Create(DateTime value)
+    private CustomersCreatedAt(DateTime value) => Value = value;
+
+    public static CustomersCreatedAt Create(DateTime value)
     {
         if (value == DateTime.MinValue)
-            throw new ArgumentException("El campo creado_en no puede ser igual a DateTime.MinValue");
+            throw new ArgumentException("El campo created_at no puede ser DateTime.MinValue.", nameof(value));
 
-        return new CustomersCreadoEn(value);
+        return new CustomersCreatedAt(value);
     }
 }
