@@ -20,6 +20,7 @@ using GestorDeVuelosProyectoFinal.Moduls.Airlines.Infrastructure.Persistence.Ent
 using GestorDeVuelosProyectoFinal.Moduls.Airports.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.PersonalPositions.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.Personal.Infrastructure.Persistence.Entities;
 
 
 
@@ -50,6 +51,9 @@ public class AppDbContext : DbContext
     public DbSet<AirportAirlineEntity> AirportAirlines { get; set; } = null!;
     public DbSet<PersonalPositionEntity> PersonalPositions { get; set; } = null!;
     public DbSet<StaffPositionReferenceEntity> StaffPositionReferences { get; set; } = null!;
+    public DbSet<StaffEntity> Staffs { get; set; } = null!;
+    public DbSet<FlightAssignmentStaffReferenceEntity> FlightAssignmentStaffReferences { get; set; } = null!;
+    public DbSet<FutureFlightReferenceEntity> FutureFlightReferences { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -79,6 +83,9 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AirportAirlineEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PersonalPositionEntityConfiguration());
         modelBuilder.ApplyConfiguration(new StaffPositionReferenceEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new StaffEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new FlightAssignmentStaffReferenceEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new FutureFlightReferenceEntityConfiguration());
     }
 
 }
