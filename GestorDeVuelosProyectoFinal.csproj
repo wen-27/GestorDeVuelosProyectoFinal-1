@@ -44,5 +44,7 @@
     <Folder Include="src\Moduls\FlightStatus\Domain\ValueObject\" />
     <Folder Include="src\Moduls\PassengerReservations\Application\Services\" />
     <Folder Include="src\Moduls\PaymentMediumTypes\Domain\Repositories\" />
+    <Folder Include="src\Moduls\TicketStates\Application\Services\" />
+    <Folder Include="src\Moduls\TicketStates\Infrastructure\Entity\" />
   </ItemGroup>
 </Project>

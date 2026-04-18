@@ -20,7 +20,7 @@ public sealed class Person // <--- Cambiado a Person
 
     public static Person Create(
         Guid id, 
-        Guid documentTypeId, 
+        int documentTypeId, 
         string documentNumber, 
         string names, 
         string lastNames, 

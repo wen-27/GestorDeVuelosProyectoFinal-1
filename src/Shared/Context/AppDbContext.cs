@@ -11,6 +11,7 @@ using GestorDeVuelosProyectoFinal.Moduls.Addresses.Infrastructure.Persistence.En
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.CabinConfiguration.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.DocumentTypes.Infrastructure.Persistence.Entities;
 
 
 
@@ -30,6 +31,8 @@ public class AppDbContext : DbContext
     public DbSet<CabinConfiurationEntity> CabinConfigurations { get; set; } = null!;
     public DbSet<AircraftModelsEntity> AircraftModel { get; set; } = null!;
 
+    public DbSet<DocumentTypeEntity> DocumentTypes { get; set; } = null!;
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -46,6 +49,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AddressEntityConfiguration());
         modelBuilder.ApplyConfiguration(new CabinTypeEntityConfiguration());
         modelBuilder.ApplyConfiguration(new CabinConfigurationEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new DocumentTypeEntityConfiguration());
     }
 
 }

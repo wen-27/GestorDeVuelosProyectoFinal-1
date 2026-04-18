@@ -3,14 +3,14 @@ using GestorDeVuelosProyectoFinal.src.Moduls.TicketStates.Domain.ValueObject;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.TicketStates.Domain.Aggregate;
 
-public sealed class TicketStates
+public sealed class TicketState
 {
     public TicketStatesId Id { get; private set; } = null!;
     public TicketStatesName Name { get; private set; } = null!;
 
-    private TicketStates() { }
+    private TicketState() { }
 
-    private TicketStates(
+    private TicketState(
         TicketStatesId id,
         TicketStatesName name)
     {
@@ -18,19 +18,22 @@ public sealed class TicketStates
         Name = name;
     }
 
-    public static TicketStates Create(
-        Guid id,
+    public static TicketState Create(
+        int id,
         string name)
     {
-        return new TicketStates(
+        return new TicketState(
             TicketStatesId.Create(id),
             TicketStatesName.Create(name)
         );
     }
+    internal void SetId(int id)
+    {
+        Id = TicketStatesId.Create(id);
+    }
 
     public void UpdateName(string newName)
     {
-        // El Value Object TicketStatesName se encarga de validar (longitud, números, etc.)
         Name = TicketStatesName.Create(newName);
-    }   
+    }  
 }
