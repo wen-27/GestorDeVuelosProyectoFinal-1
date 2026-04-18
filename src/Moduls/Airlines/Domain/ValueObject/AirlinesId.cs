@@ -1,17 +1,15 @@
-using System;
-
 namespace GestorDeVuelosProyectoFinal.Moduls.Airlines.Domain.ValueObject;
 
-public sealed class AirlinesId 
+public sealed class AirlinesId
 {
-    public Guid Value { get; }
+    public int Value { get; }
 
-    private AirlinesId(Guid value) => Value = value;
+    private AirlinesId(int value) => Value = value;
 
-    public static AirlinesId Create(Guid value)
+    public static AirlinesId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El id del aerolínea no es válido", nameof(value));
+        if (value < 0)
+            throw new ArgumentException("El id de la aerolínea no es válido.", nameof(value));
 
         return new AirlinesId(value);
     }
