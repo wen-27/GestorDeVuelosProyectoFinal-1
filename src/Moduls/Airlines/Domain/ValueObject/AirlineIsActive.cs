@@ -6,11 +6,7 @@ public sealed record AirlinesIsActive
 
     private AirlinesIsActive(bool value) => Value = value;
 
-    public static AirlinesIsActive Create(bool value)
-    {
-        
-        return new AirlinesIsActive(value);
-    }
-    
+    public static AirlinesIsActive Create(bool value) => new(value);
+
     public override string ToString() => Value ? "Activa" : "Inactiva";
 }
