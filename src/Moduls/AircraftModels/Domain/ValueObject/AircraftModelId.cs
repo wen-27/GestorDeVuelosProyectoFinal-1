@@ -6,7 +6,7 @@ public sealed record AircraftModelId
     private AircraftModelId(int value) => Value = value;
     public static AircraftModelId Create(int value)
     {
-        if (value <= 0)
+        if (value < 0)
             throw new ArgumentException("El ID del modelo no es válido.", nameof(value));
         return new AircraftModelId(value);
     }
