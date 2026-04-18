@@ -1,9 +1,10 @@
 using System;
 using GestorDeVuelosProyectoFinal.src.Moduls.Ticket.Domain.ValueObject;
-
+using GestorDeVuelosProyectoFinal.src.Moduls.PassengerReservations.Domain.ValueObject;
+using GestorDeVuelosProyectoFinal.src.Moduls.TicketStates.Domain.ValueObject;
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Ticket.Domain.Aggregate;
 
-public sealed class Ticket
+public sealed class TicketAggregate
 {
     public TicketId Id { get; private set; } = null!;
     public TicketCode Code { get; private set; } = null!;
@@ -11,59 +12,71 @@ public sealed class Ticket
     public TicketCreatedAt CreatedAt { get; private set; } = null!;
     public TicketUpdateAt UpdateAt { get; private set; } = null!;
 
-    private Ticket() { }
+    public PassengerReservationId ReservationPassengerId { get; private set; } = null!;
 
-    private Ticket(
+    public TicketStatesId StatesId { get; private set; } = null!;
+
+    private TicketAggregate() { }
+
+    private TicketAggregate(
         TicketId id,
         TicketCode code,
         TicketIssueDate issueDate,
         TicketCreatedAt createdAt,
-        TicketUpdateAt updateAt)
+        TicketUpdateAt updateAt,
+        PassengerReservationId reservationPassengerId,
+        TicketStatesId statesId)
     {
         Id = id;
         Code = code;
         IssueDate = issueDate;
         CreatedAt = createdAt;
         UpdateAt = updateAt;
+        ReservationPassengerId = reservationPassengerId;
+        StatesId = statesId;
     }
 
-    public static Ticket Create(
+    public static TicketAggregate Create(
         int id,
         string code,
         DateTime issueDate,
+        DateTime createdAt,
         DateTime updatedAt,
-        DateTime createdAt)
+        int reservationPassengerId,
+        int statusId)
     {
-        return new Ticket(
+        return new TicketAggregate(
             TicketId.Create(id),
             TicketCode.Create(code),
             TicketIssueDate.Create(issueDate),
             TicketCreatedAt.Create(createdAt),
-            TicketUpdateAt.Create(updatedAt)
+            TicketUpdateAt.Create(updatedAt),
+            PassengerReservationId.Create(reservationPassengerId),
+            TicketStatesId.Create(statusId)
         );
+    }
+    internal void SetId(int id)
+    {
+        Id = TicketId.Create(id);
     }
 
     public void UpdateCode(string newCode)
     {
-        // El Value Object TicketCode se encarga de validar (longitud, números, etc.)
         Code = TicketCode.Create(newCode);
     }
 
     public void UpdateIssueDate(DateTime newIssueDate)
     {
-        // El Value Object TicketIssueDate se encarga de validar (fecha no vacia, fecha en el pasado, etc.)
         IssueDate = TicketIssueDate.Create(newIssueDate);
     }
 
-    public void UpdateCreatedAt(DateTime newCreatedAt)
+    public void UpdateStatus(int newStatusId)
     {
-        // El Value Object TicketCreatedAt se encarga de validar (fecha no vacia, fecha en el pasado, etc.)
-        CreatedAt = TicketCreatedAt.Create(newCreatedAt);
+        StatesId = TicketStatesId.Create(newStatusId);
     }
 
-    public void UpdateUpdateAt(DateTime newUpdateAt)
+    public void UpdateReservationPassenger(int newReservationPassengerId)
     {
-        // El Value Object TicketUpdateAt se encarga de validar (fecha no vacia, fecha en el pasado, etc.)
-        UpdateAt = TicketUpdateAt.Create(newUpdateAt);
+        ReservationPassengerId = PassengerReservationId.Create(newReservationPassengerId);
     }
 }

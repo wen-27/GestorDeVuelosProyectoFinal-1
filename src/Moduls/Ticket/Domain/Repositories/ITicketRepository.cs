@@ -6,8 +6,9 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.Ticket.Domain.Repositories;
 
 public interface ITicketRepository
 {
-    Task<Aggregate.Ticket?> GetByIdAsync(TicketId id);
-    Task<IEnumerable<Aggregate.Ticket>> GetAllAsync();
-    Task SaveAsync(Aggregate.Ticket ticket);
-    Task DeleteAsync(TicketId id);
+    Task<TicketAggregate?> GetByIdAsync(TicketId id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TicketAggregate>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task SaveAsync(TicketAggregate ticket, CancellationToken cancellationToken = default);
+    Task DeleteAsync(TicketId id, CancellationToken cancellationToken = default);
+    Task UpdateAsync(TicketAggregate ticket, CancellationToken cancellationToken = default); 
 }
