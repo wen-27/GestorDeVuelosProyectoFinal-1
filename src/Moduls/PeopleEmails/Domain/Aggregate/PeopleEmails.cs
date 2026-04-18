@@ -15,7 +15,7 @@ public sealed class PersonEmail
 
     private PersonEmail() { }
 
-    public static PersonEmail Create(Guid id, Guid personId, string userEmail, Guid emailDomainId, bool isPrimary)
+    public static PersonEmail Create(Guid id, Guid personId, string userEmail, int emailDomainId, bool isPrimary)
     {
         return new PersonEmail
         {
