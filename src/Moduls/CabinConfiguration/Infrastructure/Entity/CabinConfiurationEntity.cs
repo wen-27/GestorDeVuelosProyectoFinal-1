@@ -12,8 +12,8 @@ public class CabinConfiurationEntity
     public int SeatsPerRow { get; set; }
     public string SeatLetters { get; set; } = string.Empty;
 
-    public required AircraftEntity aircraft { get; set; }
-    public required CabinTypeEntity cabin_type { get; set; }
+    public virtual AircraftEntity? Aircraft { get; set; } 
+    public virtual CabinTypeEntity? CabinType { get; set; }
 
 }
 
