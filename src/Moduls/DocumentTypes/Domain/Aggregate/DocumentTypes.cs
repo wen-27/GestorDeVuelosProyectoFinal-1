@@ -18,12 +18,27 @@ public sealed class DocumentType
         Code = code;
     }
 
-    public static DocumentType Create(Guid id, string name, string code)
+    public static DocumentType Create(string name, string code)
+    {
+        return new DocumentType
+        {
+            Name = DocumentTypesName.Create(name),
+            Code = DocumentTypesCode.Create(code)
+        };
+    }
+
+    public static DocumentType FromPrimitives(int id, string name, string code)
     {
         return new DocumentType(
             DocumentTypesId.Create(id),
             DocumentTypesName.Create(name),
             DocumentTypesCode.Create(code)
         );
+    }
+
+    public void Update(string name, string code)
+    {
+        Name = DocumentTypesName.Create(name);
+        Code = DocumentTypesCode.Create(code);
     }
 }
