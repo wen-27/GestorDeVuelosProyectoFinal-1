@@ -4,14 +4,14 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.TicketStates.Domain.ValueObject
 
 public sealed class TicketStatesId
 {
-    public Guid Value { get; }
+    public int Value { get; }
 
-    private TicketStatesId(Guid value) => Value = value;
+    private TicketStatesId(int value) => Value = value;
 
-    public static TicketStatesId Create(Guid value)
+    public static TicketStatesId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El id del estado de ticket no es válido", nameof(value));
+        if (value <= 0)
+            throw new ArgumentException("The ticket status ID is invalid", nameof(value));
 
         return new TicketStatesId(value);
     }
