@@ -4,14 +4,15 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
 
 public sealed class AircraftId
 {
-    public Guid Value { get; }
-    private AircraftId(Guid value) => Value = value;
+    public int Value { get; }
+    private AircraftId(int value) => Value = value;
 
-    public static AircraftId Create(Guid value)
+    public static AircraftId Create(int value)
     {
-        if (value == Guid.Empty)
+        if (value <= 0)
             throw new ArgumentException("El id del avión no es válido", nameof(value));
 
         return new AircraftId(value);
     }
+    public override string ToString() => Value.ToString();
 }

@@ -1,18 +1,19 @@
-using System;
-
 namespace GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.ValueObject;
+
+using System;
 
 public sealed class CabinTypesId 
 {
-    public Guid Value { get; }
+    public int Value { get; }
 
-    private CabinTypesId(Guid value) => Value = value;
+    private CabinTypesId(int value) => Value = value;
 
-    public static CabinTypesId Create(Guid value)
+    public static CabinTypesId Create(int value)
     {
-        if (value == Guid.Empty)
-            throw new ArgumentException("El id del tipo de cabina no es válido", nameof(value));
+        if (value <= 0)
+            throw new ArgumentException("El id del tipo de cabina debe ser un número positivo", nameof(value));
 
         return new CabinTypesId(value);
     }
+    public override string ToString() => Value.ToString();
 }

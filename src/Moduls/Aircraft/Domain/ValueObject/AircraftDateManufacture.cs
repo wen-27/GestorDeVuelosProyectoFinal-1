@@ -14,4 +14,5 @@ public sealed class AircraftDateManufacture
 
         return new AircraftDateManufacture(value);
     }
+    public override string ToString() => Value.ToString();
 }
