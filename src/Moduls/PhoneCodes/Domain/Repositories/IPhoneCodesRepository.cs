@@ -7,18 +7,15 @@ namespace GestorDeVuelosProyectoFinal.Moduls.PhoneCodes.Domain.Repositories;
 
 public interface IPhoneCodesRepository
 {
-    // Obtener por ID único
     Task<PhoneCode?> GetByIdAsync(PhoneCodesId id);
-
-    // Obtener por código de país (ej: "+57")
     Task<PhoneCode?> GetByCountryCodeAsync(PhoneCodesCountryCode code);
-
-    // Listar todos los códigos (para llenar dropdowns en el frontend)
+    Task<PhoneCode?> GetByCountryNameAsync(PhoneCodesCountryName countryName);
+    Task<PhoneCode?> GetByCountryCodeStringAsync(string code);
+    Task<PhoneCode?> GetByCountryNameStringAsync(string countryName);
     Task<IEnumerable<PhoneCode>> GetAllAsync();
-
-    // Guardar o actualizar
     Task SaveAsync(PhoneCode phoneCode);
-
-    // Eliminar
+    Task UpdateAsync(PhoneCode phoneCode);
     Task DeleteAsync(PhoneCodesId id);
+    Task DeleteByCountryCodeAsync(PhoneCodesCountryCode code);
+    Task DeleteByCountryNameAsync(PhoneCodesCountryName countryName);
 }
