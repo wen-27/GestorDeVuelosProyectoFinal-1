@@ -51,22 +51,7 @@ public sealed class StaffAvailabilityRecord
         DateTime startDate,
         DateTime endDate,
         string? observation)
-    {return new StaffAvailabilityRecord(
-            id: StaffAvailabilityId.Create(id),
-            staffId: PersonalId.Create(staffId),
-            stateId: AvailabilityStatesId.Create(stateId),
-            dates: StaffAvailabilityDates.Create(startDate, endDate),
-            observation: StaffAvailabilityObservation.Create(observation));
-    }
-
-    public void Update(
-        int staffId,
-        int stateId,
-        DateTime startDate,
-        DateTime endDate,
-        string? observation)
     {
-
         return new StaffAvailabilityRecord(
             id: StaffAvailabilityId.Create(id),
             staffId: PersonalId.Create(staffId),
@@ -81,7 +66,7 @@ public sealed class StaffAvailabilityRecord
         DateTime startDate,
         DateTime endDate,
         string? observation)
-
+    {
         StaffId = PersonalId.Create(staffId);
         StateId = AvailabilityStatesId.Create(stateId);
         Dates = StaffAvailabilityDates.Create(startDate, endDate);
