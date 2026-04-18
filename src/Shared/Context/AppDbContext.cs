@@ -14,12 +14,11 @@ using GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.DocumentTypes.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.src.Moduls.EmailDomains.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.People.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.src.Moduls.PeopleEmails.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.PeoplePhones.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.PhoneCodes.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Airlines.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Airports.Infrastructure.Persistence.Entities;
-
-
 
 namespace GestorDeVuelosProyectoFinal.src.Shared.Context;
 
@@ -37,17 +36,17 @@ public class AppDbContext : DbContext
     public DbSet<CabinConfiurationEntity> CabinConfigurations { get; set; } = null!;
     public DbSet<AircraftModelsEntity> AircraftModel { get; set; } = null!;
     public DbSet<EmailDomainsEntity> EmailDomains { get; set; } = null!;
-
+    public DbSet<PersonEmailEntity> PersonEmails { get; set; } = null!;
     public DbSet<DocumentTypeEntity> DocumentTypes { get; set; } = null!;
     public DbSet<PersonEntity> Persons { get; set; } = null!;
     public DbSet<PeoplePhoneEntity> PeoplePhones { get; set; } = null!;
     public DbSet<PhoneCodeEntity> PhoneCodes { get; set; } = null!;
     public DbSet<AirlineEntity> Airlines { get; set; } = null!;
+
     public DbSet<AirportEntity> Airports { get; set; } = null!;
     public DbSet<AirportRouteReferenceEntity> AirportRouteReferences { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -66,6 +65,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new EmailDomainsEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PersonEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new PersonEmailEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PeoplePhoneEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PhoneCodeEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AirlineEntityConfiguration());
