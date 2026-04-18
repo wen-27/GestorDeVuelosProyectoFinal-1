@@ -1,6 +1,6 @@
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Application.UseCases;
-using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
+using AircraftAggregate = GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate.Aircraft;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Application.Services;
 
@@ -8,46 +8,61 @@ public sealed class AircraftService : IAircraftService
 {
     private readonly GetAllAircraftUseCase _getAll;
     private readonly GetAircraftByIdUseCase _getById;
+    private readonly GetAircraftByRegistrationUseCase _getByRegistration;
+    private readonly GetAircraftByAirlineIdUseCase _getByAirline;
     private readonly CreateAircraftUseCase _create;
-    private readonly UpdtaeAircraftUseCase _update; // ← corregido nombre
-    private readonly DeleteAircraftUseCase _delete;
+    private readonly UpdtaeAircraftUseCase _update;
+    private readonly DeleteAircraftUseCase _deactivate;
 
     public AircraftService(
         GetAllAircraftUseCase getAll,
         GetAircraftByIdUseCase getById,
+        GetAircraftByRegistrationUseCase getByRegistration,
+        GetAircraftByAirlineIdUseCase getByAirline,
         CreateAircraftUseCase create,
-        UpdtaeAircraftUseCase update, // ← corregido
-        DeleteAircraftUseCase delete)
+        UpdtaeAircraftUseCase update,
+        DeleteAircraftUseCase deactivate)
     {
         _getAll = getAll;
         _getById = getById;
+        _getByRegistration = getByRegistration;
+        _getByAirline = getByAirline;
         _create = create;
         _update = update;
-        _delete = delete;
+        _deactivate = deactivate;
     }
 
-    public Task<IReadOnlyCollection<global::GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate.Aircraft>> GetAllAsync(CancellationToken ct = default)
-        => _getAll.ExecuteAsync(ct);
+    public Task<IReadOnlyCollection<AircraftAggregate>> GetAllAsync(CancellationToken cancellationToken = default)
+        => _getAll.ExecuteAsync(cancellationToken);
 
-    public Task<global::GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate.Aircraft?> GetByIdAsync(int id, CancellationToken ct = default)
-        => _getById.ExecuteAsync(AircraftId.Create(id), ct);
+    public Task<AircraftAggregate?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        => _getById.ExecuteAsync(id, cancellationToken);
 
-    public Task<global::GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate.Aircraft> CreateAsync(
-        int id,
+    public Task<AircraftAggregate?> GetByRegistrationAsync(string registration, CancellationToken cancellationToken = default)
+        => _getByRegistration.ExecuteAsync(registration, cancellationToken);
+
+    public Task<IReadOnlyCollection<AircraftAggregate>> GetByAirlineIdAsync(int airlineId, CancellationToken cancellationToken = default)
+        => _getByAirline.ExecuteAsync(airlineId, cancellationToken);
+
+    public Task<AircraftAggregate> CreateAsync(
+        int modelId,
+        int airlineId,
         string registration,
-        DateTime dateManufactured,
+        DateTime? manufacturedDate,
         bool isActive,
-        CancellationToken ct = default)
-        => _create.ExecuteAsync(id, registration, dateManufactured, isActive, ct);
+        CancellationToken cancellationToken = default)
+        => _create.ExecuteAsync(modelId, airlineId, registration, manufacturedDate, isActive, cancellationToken);
 
-    public Task<global::GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate.Aircraft> UpdateAsync(
+    public Task<AircraftAggregate> UpdateAsync(
         int id,
+        int modelId,
+        int airlineId,
         string registration,
-        DateTime dateManufactured,
+        DateTime? manufacturedDate,
         bool isActive,
-        CancellationToken ct = default)
-        => _update.ExecuteAsync(id, registration, dateManufactured, isActive, ct);
+        CancellationToken cancellationToken = default)
+        => _update.ExecuteAsync(id, modelId, airlineId, registration, manufacturedDate, isActive, cancellationToken);
 
-    public Task<bool> DeleteAsync(int id, CancellationToken ct = default)
-        => _delete.ExecuteAsync(AircraftId.Create(id), ct);
+    public Task<bool> DeactivateAsync(int id, CancellationToken cancellationToken = default)
+        => _deactivate.ExecuteAsync(id, cancellationToken);
 }

@@ -15,12 +15,16 @@ public sealed class DeleteAircraftUseCase
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<bool> ExecuteAsync(AircraftId id, CancellationToken cancellationToken = default)
+    public async Task<bool> ExecuteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var aircraft = await _repository.GetByIdAsync(id, cancellationToken)
+        var aircraft = await _repository.GetByIdAsync(AircraftId.Create(id), cancellationToken)
             ?? throw new KeyNotFoundException($"Avión con id '{id}' no encontrado.");
 
-        await _repository.DeleteByIdAsync(id, cancellationToken);
+        if (await _repository.HasFutureFlightsAsync(aircraft.Id, cancellationToken))
+            throw new InvalidOperationException("No se puede desactivar la aeronave porque tiene vuelos futuros.");
+
+        aircraft.Deactivate();
+        await _repository.UpdateAsync(aircraft, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
     }

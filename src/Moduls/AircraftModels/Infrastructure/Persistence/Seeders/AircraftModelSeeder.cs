@@ -1,45 +1,62 @@
-using GestorDeVuelosProyectoFinal.src.Shared.Contracts;
-using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.Repositories;
-using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.Aggregate;
+using Microsoft.EntityFrameworkCore;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.src.Shared.Context;
 
-namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Persistence;
+namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Persistence.Seeders;
 
 public sealed class AircraftModelSeeder
 {
-    private readonly IAircraftModelsRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly AppDbContext _context;
 
-    private static readonly (string Name, int Capacity, int Speed)[] _seeds =
+    private static readonly (string Manufacturer, string ModelName, int MaxCapacity, decimal? Weight, decimal? Fuel, int? Speed, int? Altitude)[] SeedData =
     {
-        ("Boeing 737-800", 189, 842),
-        ("Airbus A320",    180, 828),
-        ("Boeing 787-9",   296, 903),
-        ("Airbus A380",    555, 903),
-        ("Embraer E190",   100, 870)
+        ("Boeing", "737-800", 189, 79015m, 2600m, 842, 41000),
+        ("Airbus", "A320", 180, 77000m, 2400m, 828, 39000),
+        ("Boeing", "787-9", 296, 254000m, 5600m, 903, 43000),
+        ("Airbus", "A380", 555, 575000m, 13000m, 903, 43000),
+        ("Embraer", "E190", 100, 51800m, 1700m, 870, 41000)
     };
 
-    public AircraftModelSeeder(IAircraftModelsRepository repository, IUnitOfWork unitOfWork)
+    public AircraftModelSeeder(AppDbContext context)
     {
-        _repository = repository;
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        var existing     = await _repository.FindAllAsync(cancellationToken);
-        var existingNames = existing.Select(m => m.ModelName.Value)
-                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var manufacturers = await _context.AircraftManufacturers
+            .AsNoTracking()
+            .ToDictionaryAsync(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
-        foreach (var (name, capacity, speed) in _seeds)
+        var existing = await _context.AircraftModels
+            .AsNoTracking()
+            .Select(x => new { x.AircraftManufacturerId, x.ModelName })
+            .ToListAsync(cancellationToken);
+
+        foreach (var seed in SeedData)
         {
-            if (existingNames.Contains(name)) continue;
+            if (!manufacturers.TryGetValue(seed.Manufacturer, out var manufacturerId))
+                continue;
 
-            // El id=0 solo funciona si tu BD autogenera el ID (identity/autoincrement).
-            // Si el ID lo manejas tú, debes calcular el próximo disponible.
-            var model = AircraftModel.Create(0, name, capacity, null, null, speed, null);
-            await _repository.AddAsync(model, cancellationToken);
+            var duplicate = existing.Any(x =>
+                x.AircraftManufacturerId == manufacturerId &&
+                string.Equals(x.ModelName, seed.ModelName, StringComparison.OrdinalIgnoreCase));
+
+            if (duplicate)
+                continue;
+
+            await _context.AircraftModels.AddAsync(new AircraftModelsEntity
+            {
+                AircraftManufacturerId = manufacturerId,
+                ModelName = seed.ModelName,
+                MaxCapacity = seed.MaxCapacity,
+                MaxTakeoffWeightKg = seed.Weight,
+                FuelConsumptionKgH = seed.Fuel,
+                CruiseSpeedKmh = seed.Speed,
+                CruiseAltitudeFt = seed.Altitude
+            }, cancellationToken);
         }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

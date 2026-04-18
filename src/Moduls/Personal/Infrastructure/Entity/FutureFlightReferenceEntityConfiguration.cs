@@ -15,6 +15,10 @@ public sealed class FutureFlightReferenceEntityConfiguration : IEntityTypeConfig
         builder.Property(x => x.Id)
             .HasColumnName("id");
 
+        builder.Property(x => x.AircraftId)
+            .HasColumnName("aircraft_id")
+            .IsRequired(false);
+
         builder.Property(x => x.DepartureTime)
             .HasColumnName("departure_time");
     }

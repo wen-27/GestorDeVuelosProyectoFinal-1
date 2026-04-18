@@ -1,8 +1,7 @@
+using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Repositories;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Application.UseCases;
-
-public record CabinTypeResponse(int Id, string Name);
 
 public sealed class GetCabinTypesUseCase
 {
@@ -13,10 +12,6 @@ public sealed class GetCabinTypesUseCase
         _repository = repository;
     }
 
-    public async Task<IEnumerable<CabinTypeResponse>> Execute()
-    {
-        var result = await _repository.GetAllAsync();
-        
-        return result.Select(c => new CabinTypeResponse(c.Id.Value, c.Name.Value));
-    }
+    public Task<IEnumerable<CabinType>> Execute()
+        => _repository.GetAllAsync();
 }

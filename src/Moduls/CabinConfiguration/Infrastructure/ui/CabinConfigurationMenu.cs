@@ -1,6 +1,7 @@
 using Spectre.Console;
 using GestorDeVuelosProyectoFinal.Moduls.CabinConfiguration.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.src.Shared.ui;
+using CabinConfigurationAggregate = GestorDeVuelosProyectoFinal.Moduls.CabinConfiguration.Domain.Aggregate.CabinConfiguration;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.CabinConfiguration.Infrastructure.ui;
 
@@ -8,250 +9,147 @@ public sealed class CabinConfigurationMenu : IModuleUI
 {
     private readonly ICabinConfigurationService _service;
 
-    public string Key => "cabinconfiguration";
-    public string Title => "Cabin Configuration";
-
     public CabinConfigurationMenu(ICabinConfigurationService service)
     {
         _service = service;
     }
+
+    public string Key => "cabin-configuration";
+    public string Title => "Configuración de Cabina";
 
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
             AnsiConsole.Clear();
-            AnsiConsole.Write(new Rule("[bold deepskyblue1] Cabin Configuration Management [/]").LeftJustified());
+            AnsiConsole.Write(new Rule("[bold deepskyblue1] Configuración de Cabina [/]").LeftJustified());
 
             var option = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("\n[grey]Use arrows to navigate, Enter to select[/]")
+                    .Title("\n[grey]Usa las flechas para navegar[/]")
                     .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
                     .AddChoices(
-                        "List all cabin configurations",
-                        "List configurations by aircraft",
-                        "Create cabin configuration",
-                        "Update cabin configuration",
-                        "Delete cabin configuration",
-                        "Back"));
+                        "Listar todas",
+                        "Buscar por aeronave",
+                        "Crear configuración",
+                        "Actualizar configuración",
+                        "Eliminar configuración",
+                        "Volver"));
 
             switch (option)
             {
-                case "List all cabin configurations": await ListAllAsync(); break;
-                case "List configurations by aircraft": await ListByAircraftAsync(); break;
-                case "Create cabin configuration": await CreateAsync(); break;
-                case "Update cabin configuration": await UpdateAsync(); break;
-                case "Delete cabin configuration": await DeleteAsync(); break;
-                case "Back": return;
+                case "Listar todas": await ListAllAsync(); break;
+                case "Buscar por aeronave": await ListByAircraftAsync(); break;
+                case "Crear configuración": await CreateAsync(); break;
+                case "Actualizar configuración": await UpdateAsync(); break;
+                case "Eliminar configuración": await DeleteAsync(); break;
+                case "Volver": return;
             }
         }
     }
 
     private async Task ListAllAsync()
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[bold]All Cabin Configurations[/]").LeftJustified());
-
-        var configurations = (await _service.GetAllAsync()).ToList();
-        RenderConfigurationsTable(configurations);
+        RenderTable(await _service.GetAllAsync(), "Configuraciones de cabina");
         Pause();
     }
 
     private async Task ListByAircraftAsync()
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[bold]Cabin Configurations By Aircraft[/]").LeftJustified());
-
-        var aircraftId = PromptPositiveInt("Aircraft ID:");
-        var configurations = (await _service.GetByAircraftIdAsync(aircraftId)).ToList();
-
-        if (configurations.Count == 0)
-            AnsiConsole.MarkupLine($"\n[yellow]No configurations found for aircraft {aircraftId}.[/]");
-        else
-            RenderConfigurationsTable(configurations);
-
+        var aircraftId = PromptPositiveInt("ID de la aeronave:");
+        RenderTable(await _service.GetByAircraftIdAsync(aircraftId), $"Configuraciones para aeronave {aircraftId}");
         Pause();
     }
 
     private async Task CreateAsync()
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[bold]Create Cabin Configuration[/]").LeftJustified());
-
-        var form = PromptConfigurationData();
-
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Panel(
-                $"Aircraft: [bold]{form.aircraftId}[/]\n" +
-                $"Cabin type: [bold]{form.cabinTypeId}[/]\n" +
-                $"Rows: [bold]{form.rowStart} - {form.rowEnd}[/]\n" +
-                $"Seats/row: [bold]{form.seatsPerRow}[/]\n" +
-                $"Seat letters: [bold]{form.seatLetters}[/]")
-            .Header("[grey]Configuration to create[/]")
-            .BorderColor(Color.Grey));
-
-        var confirm = AnsiConsole.Prompt(
-            new SelectionPrompt<string>()
-                .Title("\nConfirm?")
-                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
-                .AddChoices("Yes, save", "No, cancel"));
-
-        if (confirm == "Yes, save")
+        var form = PromptForm();
+        try
         {
-            try
-            {
-                await _service.CreateAsync(
-                    form.aircraftId,
-                    form.cabinTypeId,
-                    form.rowStart,
-                    form.rowEnd,
-                    form.seatsPerRow,
-                    form.seatLetters);
-
-                AnsiConsole.MarkupLine("\n[green]Cabin configuration created successfully.[/]");
-            }
-            catch (Exception ex)
-            {
-                AnsiConsole.MarkupLine($"\n[red]Error: {ex.Message}[/]");
-            }
+            await _service.CreateAsync(form.aircraftId, form.cabinTypeId, form.rowStart, form.rowEnd, form.seatsPerRow, form.seatLetters);
+            AnsiConsole.MarkupLine("\n[green]Configuración creada correctamente.[/]");
         }
-        else
+        catch (Exception ex)
         {
-            AnsiConsole.MarkupLine("\n[yellow]Operation cancelled.[/]");
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
         }
-
         Pause();
     }
 
     private async Task UpdateAsync()
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[bold]Update Cabin Configuration[/]").LeftJustified());
-
-        var existing = (await _service.GetAllAsync()).ToList();
-        if (existing.Count == 0)
-        {
-            AnsiConsole.MarkupLine("\n[yellow]No cabin configurations to update.[/]");
-            Pause();
-            return;
-        }
-
-        RenderConfigurationsTable(existing);
-        AnsiConsole.WriteLine();
-
-        var id = PromptPositiveInt("Configuration ID to update:");
+        var id = PromptPositiveInt("ID de la configuración:");
         var current = await _service.GetByIdAsync(id);
-
         if (current is null)
         {
-            AnsiConsole.MarkupLine($"\n[red]Configuration with id {id} was not found.[/]");
+            AnsiConsole.MarkupLine("\n[yellow]No se encontró la configuración.[/]");
             Pause();
             return;
         }
 
-        var form = PromptConfigurationData();
+        var form = PromptForm(
+            current.AircraftId,
+            current.CabinTypeId.Value,
+            current.RowRange.StartRow,
+            current.RowRange.EndRow,
+            current.SeatsPerRow.Value,
+            current.SeatLetters.Value);
 
         try
         {
-            await _service.UpdateAsync(
-                id,
-                form.aircraftId,
-                form.cabinTypeId,
-                form.rowStart,
-                form.rowEnd,
-                form.seatsPerRow,
-                form.seatLetters);
-
-            AnsiConsole.MarkupLine("\n[green]Cabin configuration updated successfully.[/]");
+            await _service.UpdateAsync(id, form.aircraftId, form.cabinTypeId, form.rowStart, form.rowEnd, form.seatsPerRow, form.seatLetters);
+            AnsiConsole.MarkupLine("\n[green]Configuración actualizada correctamente.[/]");
         }
         catch (Exception ex)
         {
-            AnsiConsole.MarkupLine($"\n[red]Error: {ex.Message}[/]");
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
         }
-
         Pause();
     }
 
     private async Task DeleteAsync()
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[bold red]Delete Cabin Configuration[/]").LeftJustified());
-
-        var configurations = (await _service.GetAllAsync()).ToList();
-        if (configurations.Count == 0)
+        var id = PromptPositiveInt("ID de la configuración a eliminar:");
+        if (!AnsiConsole.Confirm("¿Confirmas la eliminación?", false))
         {
-            AnsiConsole.MarkupLine("\n[yellow]No cabin configurations to delete.[/]");
             Pause();
             return;
         }
 
-        RenderConfigurationsTable(configurations);
-        AnsiConsole.WriteLine();
-
-        var id = PromptPositiveInt("Configuration ID to delete:");
-        var selected = await _service.GetByIdAsync(id);
-
-        if (selected is null)
+        try
         {
-            AnsiConsole.MarkupLine($"\n[red]Configuration with id {id} was not found.[/]");
-            Pause();
-            return;
+            await _service.DeleteAsync(id);
+            AnsiConsole.MarkupLine("\n[green]Configuración eliminada correctamente.[/]");
         }
-
-        AnsiConsole.Write(new Panel(
-                $"[bold red]ID:[/] {selected.Id.Value}\n" +
-                $"Aircraft: {selected.AircraftId}\n" +
-                $"Cabin type: {selected.CabinTypeId.Value}\n" +
-                $"Rows: {selected.RowRange.StartRow} - {selected.RowRange.EndRow}")
-            .Header("[red]About to delete[/]")
-            .BorderColor(Color.Red));
-
-        var confirm = AnsiConsole.Prompt(
-            new SelectionPrompt<string>()
-                .Title("\nAre you sure?")
-                .HighlightStyle(new Style(foreground: Color.Red))
-                .AddChoices("Yes, delete", "No, cancel"));
-
-        if (confirm == "Yes, delete")
+        catch (Exception ex)
         {
-            try
-            {
-                await _service.DeleteAsync(id);
-                AnsiConsole.MarkupLine("\n[green]Cabin configuration deleted successfully.[/]");
-            }
-            catch (Exception ex)
-            {
-                AnsiConsole.MarkupLine($"\n[red]Error: {ex.Message}[/]");
-            }
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
         }
-        else
-        {
-            AnsiConsole.MarkupLine("\n[yellow]Operation cancelled.[/]");
-        }
-
         Pause();
     }
 
-    private static void RenderConfigurationsTable(
-        IReadOnlyCollection<GestorDeVuelosProyectoFinal.Moduls.CabinConfiguration.Domain.Aggregate.CabinConfiguration> configurations)
+    private static void RenderTable(IEnumerable<CabinConfigurationAggregate> items, string title)
     {
-        if (configurations.Count == 0)
+        var list = items.ToList();
+        if (list.Count == 0)
         {
-            AnsiConsole.MarkupLine("\n[yellow]No cabin configurations registered yet.[/]");
+            AnsiConsole.MarkupLine("\n[yellow]No hay registros para mostrar.[/]");
             return;
         }
 
         var table = new Table()
+            .Title(title)
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Grey)
             .AddColumn("[bold grey]ID[/]")
-            .AddColumn("[bold grey]Aircraft[/]")
-            .AddColumn("[bold grey]Cabin Type[/]")
-            .AddColumn("[bold grey]Rows[/]")
-            .AddColumn("[bold grey]Seats/Row[/]")
-            .AddColumn("[bold grey]Letters[/]");
+            .AddColumn("[bold grey]Aeronave[/]")
+            .AddColumn("[bold grey]Tipo[/]")
+            .AddColumn("[bold grey]Filas[/]")
+            .AddColumn("[bold grey]Asientos/Fila[/]")
+            .AddColumn("[bold grey]Letras[/]")
+            .AddColumn("[bold grey]Asientos generados[/]");
 
-        foreach (var item in configurations.OrderBy(x => x.AircraftId).ThenBy(x => x.CabinTypeId.Value))
+        foreach (var item in list.OrderBy(x => x.AircraftId).ThenBy(x => x.CabinTypeId.Value))
         {
             table.AddRow(
                 item.Id.Value.ToString(),
@@ -259,52 +157,43 @@ public sealed class CabinConfigurationMenu : IModuleUI
                 item.CabinTypeId.Value.ToString(),
                 $"{item.RowRange.StartRow}-{item.RowRange.EndRow}",
                 item.SeatsPerRow.Value.ToString(),
-                item.SeatLetters.Value);
+                item.SeatLetters.Value,
+                item.GenerateSeatDesignators().Count().ToString());
         }
 
-        AnsiConsole.WriteLine();
         AnsiConsole.Write(table);
-        AnsiConsole.MarkupLine($"\n[grey]Total: {configurations.Count} configuration(s)[/]");
     }
 
-    private static (int aircraftId, int cabinTypeId, int rowStart, int rowEnd, int seatsPerRow, string seatLetters)
-        PromptConfigurationData()
+    private static (int aircraftId, int cabinTypeId, int rowStart, int rowEnd, int seatsPerRow, string seatLetters) PromptForm(
+        int? currentAircraftId = null,
+        int? currentCabinTypeId = null,
+        int? currentRowStart = null,
+        int? currentRowEnd = null,
+        int? currentSeatsPerRow = null,
+        string? currentSeatLetters = null)
     {
-        var aircraftId = PromptPositiveInt("Aircraft ID:");
-        var cabinTypeId = PromptPositiveInt("Cabin type ID:");
-        var rowStart = PromptPositiveInt("Start row:");
-        var rowEnd = PromptPositiveInt("End row:");
-        var seatsPerRow = PromptPositiveInt("Seats per row:");
-
-        var seatLetters = AnsiConsole.Prompt(
-            new TextPrompt<string>("[deepskyblue1]Seat letters (example: ABCDEF):[/]")
-                .Validate(value =>
-                {
-                    var clean = value.Trim().ToUpperInvariant();
-                    if (string.IsNullOrWhiteSpace(clean))
-                        return ValidationResult.Error("[red]Seat letters are required.[/]");
-                    if (clean.Any(c => !char.IsLetter(c)))
-                        return ValidationResult.Error("[red]Only letters are allowed.[/]");
-                    return ValidationResult.Success();
-                }))
-            .Trim()
-            .ToUpperInvariant();
-
+        var aircraftId = PromptPositiveInt("ID de la aeronave:", currentAircraftId);
+        var cabinTypeId = PromptPositiveInt("ID del tipo de cabina:", currentCabinTypeId);
+        var rowStart = PromptPositiveInt("Fila inicial:", currentRowStart);
+        var rowEnd = PromptPositiveInt("Fila final:", currentRowEnd);
+        var seatsPerRow = PromptPositiveInt("Asientos por fila:", currentSeatsPerRow);
+        var seatLetters = PromptRequiredText("Letras de asientos:", currentSeatLetters).ToUpperInvariant();
         return (aircraftId, cabinTypeId, rowStart, rowEnd, seatsPerRow, seatLetters);
     }
 
-    private static int PromptPositiveInt(string label)
-    {
-        return AnsiConsole.Prompt(
-            new TextPrompt<int>($"[deepskyblue1]{label}[/]")
-                .Validate(value => value > 0
-                    ? ValidationResult.Success()
-                    : ValidationResult.Error("[red]Value must be greater than zero.[/]")));
-    }
+    private static int PromptPositiveInt(string label, int? current = null)
+        => AnsiConsole.Prompt(new TextPrompt<int>($"[deepskyblue1]{label}[/]")
+            .DefaultValue(current ?? 1)
+            .Validate(v => v > 0 ? ValidationResult.Success() : ValidationResult.Error("[red]Debe ser mayor que cero.[/]")));
+
+    private static string PromptRequiredText(string label, string? current = null)
+        => AnsiConsole.Prompt(new TextPrompt<string>($"[deepskyblue1]{label}[/]")
+            .DefaultValue(current ?? string.Empty)
+            .Validate(v => string.IsNullOrWhiteSpace(v) ? ValidationResult.Error("[red]Campo obligatorio.[/]") : ValidationResult.Success())).Trim();
 
     private static void Pause()
     {
         AnsiConsole.WriteLine();
-        AnsiConsole.Prompt(new TextPrompt<string>("[grey]Press Enter to continue...[/]").AllowEmpty());
+        AnsiConsole.Prompt(new TextPrompt<string>("[grey]Presiona Enter para continuar...[/]").AllowEmpty());
     }
 }

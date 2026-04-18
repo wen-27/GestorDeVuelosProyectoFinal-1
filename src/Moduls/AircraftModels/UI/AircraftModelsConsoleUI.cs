@@ -1,6 +1,7 @@
-using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Application.Interfaces;
-using GestorDeVuelosProyectoFinal.src.Shared.ui;
 using Spectre.Console;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Application.Interfaces;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.Aggregate;
+using GestorDeVuelosProyectoFinal.src.Shared.ui;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.UI;
 
@@ -8,164 +9,234 @@ public sealed class AircraftModelsMenu : IModuleUI
 {
     private readonly IAircraftModelsService _service;
 
-    public AircraftModelsMenu(IAircraftModelsService service) => _service = service;
+    public AircraftModelsMenu(IAircraftModelsService service)
+    {
+        _service = service;
+    }
 
-    public string Key   => "2";
+    public string Key => "aircraft-models";
     public string Title => "Modelos de Aeronave";
 
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
             AnsiConsole.Clear();
-            AnsiConsole.Write(new Rule("[bold yellow]Modelos de Aeronave[/]"));
+            AnsiConsole.Write(new Rule("[bold deepskyblue1] Modelos de Aeronave [/]").LeftJustified());
 
-            var opcion = AnsiConsole.Prompt(
+            var option = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Selecciona una opción:")
-                    .AddChoices("Listar", "Crear", "Buscar por ID",
-                                "Actualizar", "Eliminar", "Volver"));
+                    .Title("\n[grey]Usa las flechas para navegar[/]")
+                    .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                    .AddChoices(
+                        "Listar todos",
+                        "Buscar por ID",
+                        "Buscar por nombre",
+                        "Buscar por fabricante",
+                        "Crear modelo",
+                        "Actualizar modelo",
+                        "Eliminar modelo",
+                        "Volver"));
 
-            try
+            switch (option)
             {
-                switch (opcion)
-                {
-                    case "Listar": await ListAsync(cancellationToken); 
-                    break;
-                    case "Crear": await CreateAsync(cancellationToken);  
-                    break;
-                    case "Buscar por ID": await GetByIdAsync(cancellationToken); break;
-                    case "Actualizar": await 
-                    UpdateAsync(cancellationToken);  break;
-                    case "Eliminar": await 
-                    DeleteAsync(cancellationToken);  break;
-                    case "Volver": 
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
-                await Task.Delay(1500);
+                case "Listar todos": await ListAllAsync(cancellationToken); break;
+                case "Buscar por ID": await SearchByIdAsync(cancellationToken); break;
+                case "Buscar por nombre": await SearchByNameAsync(cancellationToken); break;
+                case "Buscar por fabricante": await SearchByManufacturerAsync(cancellationToken); break;
+                case "Crear modelo": await CreateAsync(cancellationToken); break;
+                case "Actualizar modelo": await UpdateAsync(cancellationToken); break;
+                case "Eliminar modelo": await DeleteAsync(cancellationToken); break;
+                case "Volver": return;
             }
         }
     }
 
-    private async Task ListAsync(CancellationToken ct)
+    private async Task ListAllAsync(CancellationToken cancellationToken)
     {
-        var models = await _service.GetAllAsync(ct);
+        RenderTable(await _service.GetAllAsync(cancellationToken), "Todos los modelos");
+        Pause();
+    }
 
-        if (models.Count == 0)
+    private async Task SearchByIdAsync(CancellationToken cancellationToken)
+    {
+        var id = PromptPositiveInt("ID del modelo:");
+        var item = await _service.GetByIdAsync(id, cancellationToken);
+        RenderTable(item is null ? [] : [item], $"Resultado para ID {id}");
+        Pause();
+    }
+
+    private async Task SearchByNameAsync(CancellationToken cancellationToken)
+    {
+        var name = PromptRequiredText("Nombre del modelo:");
+        var item = await _service.GetByNameAsync(name, cancellationToken);
+        RenderTable(item is null ? [] : [item], $"Resultado para {name}");
+        Pause();
+    }
+
+    private async Task SearchByManufacturerAsync(CancellationToken cancellationToken)
+    {
+        var manufacturerId = PromptPositiveInt("ID del fabricante:");
+        RenderTable(await _service.GetByManufacturerIdAsync(manufacturerId, cancellationToken), $"Modelos del fabricante {manufacturerId}");
+        Pause();
+    }
+
+    private async Task CreateAsync(CancellationToken cancellationToken)
+    {
+        var form = PromptForm();
+        try
         {
-            AnsiConsole.MarkupLine("[yellow]No hay modelos registrados.[/]");
-            Console.ReadKey();
+            await _service.CreateAsync(form.manufacturerId, form.name, form.maxCapacity, form.weight, form.fuel, form.speed, form.altitude, cancellationToken);
+            AnsiConsole.MarkupLine("\n[green]Modelo creado correctamente.[/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
+        }
+        Pause();
+    }
+
+    private async Task UpdateAsync(CancellationToken cancellationToken)
+    {
+        var id = PromptPositiveInt("ID del modelo a actualizar:");
+        var model = await _service.GetByIdAsync(id, cancellationToken);
+
+        if (model is null)
+        {
+            AnsiConsole.MarkupLine("\n[yellow]No se encontró el modelo.[/]");
+            Pause();
+            return;
+        }
+
+        var form = PromptForm(
+            model.ManufacturerId.Value,
+            model.ModelName.Value,
+            model.MaxCapacity.Value,
+            model.MaxTakeoffWeight.Value,
+            model.FuelConsumption.Value,
+            model.CruiseSpeed.Value,
+            model.CruiseAltitude.Value);
+
+        try
+        {
+            await _service.UpdateAsync(id, form.manufacturerId, form.name, form.maxCapacity, form.weight, form.fuel, form.speed, form.altitude, cancellationToken);
+            AnsiConsole.MarkupLine("\n[green]Modelo actualizado correctamente.[/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
+        }
+        Pause();
+    }
+
+    private async Task DeleteAsync(CancellationToken cancellationToken)
+    {
+        var id = PromptPositiveInt("ID del modelo a eliminar:");
+        if (!AnsiConsole.Confirm("¿Confirmas la eliminación?", false))
+        {
+            Pause();
+            return;
+        }
+
+        try
+        {
+            await _service.DeleteAsync(id, cancellationToken);
+            AnsiConsole.MarkupLine("\n[green]Modelo eliminado correctamente.[/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
+        }
+        Pause();
+    }
+
+    private static void RenderTable(IEnumerable<AircraftModel> items, string title)
+    {
+        var list = items.ToList();
+        if (list.Count == 0)
+        {
+            AnsiConsole.MarkupLine("\n[yellow]No hay registros para mostrar.[/]");
             return;
         }
 
         var table = new Table()
+            .Title(title)
             .Border(TableBorder.Rounded)
-            .AddColumn("ID")
-            .AddColumn("Nombre")
-            .AddColumn("Capacidad")
-            .AddColumn("Peso máx (kg)")
-            .AddColumn("Combustible (kg/h)")
-            .AddColumn("Velocidad (km/h)")
-            .AddColumn("Altitud (ft)");
+            .BorderColor(Color.Grey)
+            .AddColumn("[bold grey]ID[/]")
+            .AddColumn("[bold grey]Fabricante[/]")
+            .AddColumn("[bold grey]Modelo[/]")
+            .AddColumn("[bold grey]Capacidad[/]")
+            .AddColumn("[bold grey]MTOW[/]")
+            .AddColumn("[bold grey]Consumo[/]")
+            .AddColumn("[bold grey]Velocidad[/]")
+            .AddColumn("[bold grey]Altitud[/]");
 
-        foreach (var m in models)
+        foreach (var item in list)
+        {
             table.AddRow(
-                m.Id.ToString(),
-                m.ModelName.Value,
-                m.MaxCapacity.Value.ToString(),
-                m.MaxTakeoffWeight.ToString(),
-                m.FuelConsumption.ToString(),
-                m.CruiseSpeed.ToString(),
-                m.CruiseAltitude.ToString());
+                item.Id.Value.ToString(),
+                item.ManufacturerId.Value.ToString(),
+                item.ModelName.Value,
+                item.MaxCapacity.Value.ToString(),
+                item.MaxTakeoffWeight.Value?.ToString("0.##") ?? "-",
+                item.FuelConsumption.Value?.ToString("0.##") ?? "-",
+                item.CruiseSpeed.Value?.ToString() ?? "-",
+                item.CruiseAltitude.Value?.ToString() ?? "-");
+        }
 
         AnsiConsole.Write(table);
-        AnsiConsole.Prompt(new TextPrompt<string>("[grey]Enter para continuar...[/]").AllowEmpty());
     }
 
-    private async Task CreateAsync(CancellationToken ct)
+    private static (int manufacturerId, string name, int maxCapacity, decimal? weight, decimal? fuel, int? speed, int? altitude)
+        PromptForm(
+            int? currentManufacturerId = null,
+            string? currentName = null,
+            int? currentCapacity = null,
+            decimal? currentWeight = null,
+            decimal? currentFuel = null,
+            int? currentSpeed = null,
+            int? currentAltitude = null)
     {
-        AnsiConsole.Write(new Rule("[bold]Nuevo Modelo[/]"));
-
-        var id = AnsiConsole.Prompt(new TextPrompt<int>("ID del modelo:"));
-        var name = AnsiConsole.Prompt(new TextPrompt<string>("Nombre del modelo:"));
-        var capacity = AnsiConsole.Prompt(new TextPrompt<int>("Capacidad máxima:"));
-        var weight = AnsiConsole.Prompt(new TextPrompt<decimal?>("Peso máx despegue kg (Enter para omitir):").AllowEmpty());
-        var fuel = AnsiConsole.Prompt(new TextPrompt<decimal?>("Consumo combustible kg/h (Enter para omitir):").AllowEmpty());
-        var speed = AnsiConsole.Prompt(new TextPrompt<int?>("Velocidad crucero km/h (Enter para omitir):").AllowEmpty());
-        var altitude = AnsiConsole.Prompt(new TextPrompt<int?>("Altitud crucero ft (Enter para omitir):").AllowEmpty());
-
-        // ← ct en minúscula, sin "CancellationToken:"
-        await _service.CreateAsync(id, name, capacity, weight, fuel, speed, altitude, ct);
-        AnsiConsole.MarkupLine("[green]Modelo creado exitosamente.[/]");
-        await Task.Delay(1500);
+        var manufacturerId = PromptPositiveInt("ID del fabricante:", currentManufacturerId);
+        var name = PromptRequiredText("Nombre del modelo:", currentName);
+        var maxCapacity = PromptPositiveInt("Capacidad máxima:", currentCapacity);
+        var weight = PromptOptionalDecimal("MTOW kg (opcional):", currentWeight);
+        var fuel = PromptOptionalDecimal("Consumo kg/h (opcional):", currentFuel);
+        var speed = PromptOptionalInt("Velocidad km/h (opcional):", currentSpeed);
+        var altitude = PromptOptionalInt("Altitud ft (opcional):", currentAltitude);
+        return (manufacturerId, name, maxCapacity, weight, fuel, speed, altitude);
     }
 
-    private async Task GetByIdAsync(CancellationToken ct)
+    private static int PromptPositiveInt(string label, int? current = null)
+        => AnsiConsole.Prompt(new TextPrompt<int>($"[deepskyblue1]{label}[/]")
+            .DefaultValue(current ?? 1)
+            .Validate(v => v > 0 ? ValidationResult.Success() : ValidationResult.Error("[red]Debe ser mayor que cero.[/]")));
+
+    private static string PromptRequiredText(string label, string? current = null)
+        => AnsiConsole.Prompt(new TextPrompt<string>($"[deepskyblue1]{label}[/]")
+            .DefaultValue(current ?? string.Empty)
+            .Validate(v => string.IsNullOrWhiteSpace(v) ? ValidationResult.Error("[red]Campo obligatorio.[/]") : ValidationResult.Success())).Trim();
+
+    private static decimal? PromptOptionalDecimal(string label, decimal? current = null)
     {
-        var id = AnsiConsole.Prompt(new TextPrompt<int>("ID del modelo:"));
-        var model = await _service.GetByIdAsync(id, ct);
-
-        if (model is null)
-        {
-            AnsiConsole.MarkupLine("[red]Modelo no encontrado.[/]");
-            await Task.Delay(1500);
-            return;
-        }
-
-        AnsiConsole.MarkupLine($"[bold]ID:[/] {model.Id}");
-        AnsiConsole.MarkupLine($"[bold]Nombre:[/] {model.ModelName.Value}");
-        AnsiConsole.MarkupLine($"[bold]Capacidad:[/] {model.MaxCapacity.Value}");
-        AnsiConsole.Prompt(new TextPrompt<string>("[grey]Enter para continuar...[/]").AllowEmpty());
+        var text = AnsiConsole.Prompt(new TextPrompt<string>($"[deepskyblue1]{label}[/]")
+            .DefaultValue(current?.ToString() ?? string.Empty)
+            .AllowEmpty());
+        return string.IsNullOrWhiteSpace(text) ? null : decimal.Parse(text);
     }
 
-    private async Task UpdateAsync(CancellationToken ct)
+    private static int? PromptOptionalInt(string label, int? current = null)
     {
-        var id = AnsiConsole.Prompt(new TextPrompt<int>("ID del modelo a actualizar:"));
-        var model = await _service.GetByIdAsync(id, ct);
-
-        if (model is null)
-        {
-            AnsiConsole.MarkupLine("[red]Modelo no encontrado.[/]");
-            await Task.Delay(1500);
-            return;
-        }
-
-        var name     = AnsiConsole.Prompt(new TextPrompt<string>("Nuevo nombre:").DefaultValue(model.ModelName.Value));
-        var capacity = AnsiConsole.Prompt(new TextPrompt<int>("Nueva capacidad:").DefaultValue(model.MaxCapacity.Value));
-        var weight   = AnsiConsole.Prompt(new TextPrompt<decimal?>("Nuevo peso máx kg (Enter omitir):").AllowEmpty());
-        var fuel     = AnsiConsole.Prompt(new TextPrompt<decimal?>("Nuevo consumo kg/h (Enter omitir):").AllowEmpty());
-        var speed    = AnsiConsole.Prompt(new TextPrompt<int?>("Nueva velocidad km/h (Enter omitir):").AllowEmpty());
-        var altitude = AnsiConsole.Prompt(new TextPrompt<int?>("Nueva altitud ft (Enter omitir):").AllowEmpty());
-
-
-        await _service.UpdateAsync(id, name, capacity, weight, fuel, speed, altitude, ct);
-        AnsiConsole.MarkupLine("[green]Modelo actualizado.[/]");
-        await Task.Delay(1500);
+        var text = AnsiConsole.Prompt(new TextPrompt<string>($"[deepskyblue1]{label}[/]")
+            .DefaultValue(current?.ToString() ?? string.Empty)
+            .AllowEmpty());
+        return string.IsNullOrWhiteSpace(text) ? null : int.Parse(text);
     }
 
-    private async Task DeleteAsync(CancellationToken ct)
+    private static void Pause()
     {
-        var id = AnsiConsole.Prompt(new TextPrompt<int>("ID del modelo a eliminar:"));
-
-        var confirmar = AnsiConsole.Prompt(
-            new SelectionPrompt<string>()
-                .Title("[red]¿Confirmar eliminación?[/]")
-                .AddChoices("Sí, eliminar", "No, cancelar"));
-
-        if (confirmar == "Sí, eliminar")
-        {
-            await _service.DeleteAsync(id, ct);
-            AnsiConsole.MarkupLine("[green]Modelo eliminado.[/]");
-        }
-        else
-        {
-            AnsiConsole.MarkupLine("[yellow]Operación cancelada.[/]");
-        }
-
-        await Task.Delay(1500);
+        AnsiConsole.WriteLine();
+        AnsiConsole.Prompt(new TextPrompt<string>("[grey]Presiona Enter para continuar...[/]").AllowEmpty());
     }
 }

@@ -18,32 +18,33 @@ public sealed class AircraftModelsEntityConfiguration : IEntityTypeConfiguration
 
         builder.Property(m => m.AircraftManufacturerId)
             .HasColumnName("manufacturer_id")
-            .IsRequired();  // fk
+            .IsRequired();
 
-        builder.Property(m => m.Name)
-            .HasColumnName("name")
+        builder.Property(m => m.ModelName)
+            .HasColumnName("model_name")
             .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(m => m.Capacity)
-            .HasColumnName("capacity")
+        builder.Property(m => m.MaxCapacity)
+            .HasColumnName("max_capacity")
             .IsRequired();
 
-        builder.Property(m => m.Weight)
-            .HasColumnName("weight")
-            .HasColumnType("decimal(18,2)");
+        builder.Property(m => m.MaxTakeoffWeightKg)
+            .HasColumnName("max_takeoff_weight_kg")
+            .HasColumnType("decimal(10,2)");
 
-        builder.Property(m => m.FuelConsumption)
-            .HasColumnName("fuel_consumption")
-            .HasColumnType("decimal(18,2)");
+        builder.Property(m => m.FuelConsumptionKgH)
+            .HasColumnName("fuel_consumption_kg_h")
+            .HasColumnType("decimal(8,2)");
 
-        builder.Property(m => m.CruiseSpeed)
-            .HasColumnName("cruise_speed")
-            .HasColumnType("int");
+        builder.Property(m => m.CruiseSpeedKmh)
+            .HasColumnName("cruise_speed_kmh");
 
-        builder.Property(m => m.CruiseAltitude)
-            .HasColumnName("cruise_altitude")
-            .HasColumnType("int");
+        builder.Property(m => m.CruiseAltitudeFt)
+            .HasColumnName("cruise_altitude_ft");
+
+        builder.HasIndex(m => new { m.AircraftManufacturerId, m.ModelName })
+            .IsUnique();
 
         builder.HasOne(m => m.Manufacturer)
             .WithMany(m => m.Models)

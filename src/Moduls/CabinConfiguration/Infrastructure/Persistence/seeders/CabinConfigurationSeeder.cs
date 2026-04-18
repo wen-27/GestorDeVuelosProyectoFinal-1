@@ -24,10 +24,6 @@ public sealed class CabinConfigurationSeeder
 
     public async Task SeedAsync()
     {
-        // Este seeder depende de tablas maestras:
-        // 1. aircraft
-        // 2. cabin_types
-        // Si esas tablas no tienen datos, no sembramos nada para evitar violar FKs.
         var aircraftIds = await _context.Aircrafts
             .AsNoTracking()
             .OrderBy(x => x.Id)
@@ -35,37 +31,34 @@ public sealed class CabinConfigurationSeeder
             .Take(3)
             .ToListAsync();
 
-        var cabinTypeIds = await _context.CabinTypes
+        var cabinTypes = await _context.CabinTypes
             .AsNoTracking()
-            .OrderBy(x => x.Id)
-            .Select(x => x.Id)
-            .Take(4)
+            .Select(x => new { x.Id, x.Name })
             .ToListAsync();
 
-        if (aircraftIds.Count == 0 || cabinTypeIds.Count == 0)
+        if (aircraftIds.Count == 0 || cabinTypes.Count == 0)
             return;
 
         foreach (var aircraftId in aircraftIds)
         {
             var startRow = 1;
 
-            for (int index = 0; index < cabinTypeIds.Count; index++)
+            foreach (var cabinType in cabinTypes.OrderBy(x => GetSortOrder(x.Name)))
             {
-                var cabinTypeId = cabinTypeIds[index];
-                var duplicate = await _repository.GetByAircraftAndCabinTypeAsync(aircraftId, cabinTypeId);
+                var duplicate = await _repository.GetByAircraftAndCabinTypeAsync(aircraftId, cabinType.Id);
                 if (duplicate is not null)
                 {
-                    startRow += GetRowBlockSize(index);
+                    startRow += GetRowBlockSize(cabinType.Name);
                     continue;
                 }
 
-                var rowBlock = GetRowBlockSize(index);
-                var seatsPerRow = GetSeatsPerRow(index);
-                var seatLetters = GetSeatLetters(index);
+                var rowBlock = GetRowBlockSize(cabinType.Name);
+                var seatsPerRow = GetSeatsPerRow(cabinType.Name);
+                var seatLetters = GetSeatLetters(cabinType.Name);
 
                 var configuration = CabinConfigurationAggregate.Create(
                     aircraftId,
-                    cabinTypeId,
+                    cabinType.Id,
                     startRow,
                     startRow + rowBlock - 1,
                     seatsPerRow,
@@ -79,27 +72,35 @@ public sealed class CabinConfigurationSeeder
         await _unitOfWork.SaveChangesAsync();
     }
 
-    private static int GetRowBlockSize(int index) => index switch
+    private static int GetSortOrder(string cabinTypeName) => cabinTypeName.ToUpperInvariant() switch
     {
-        0 => 4,
-        1 => 6,
-        2 => 8,
+        "VIP" => 1,
+        "FIRST CLASS" => 2,
+        "BUSINESS" => 3,
+        _ => 4
+    };
+
+    private static int GetRowBlockSize(string cabinTypeName) => cabinTypeName.ToUpperInvariant() switch
+    {
+        "VIP" => 3,
+        "FIRST CLASS" => 4,
+        "BUSINESS" => 6,
         _ => 12
     };
 
-    private static int GetSeatsPerRow(int index) => index switch
+    private static int GetSeatsPerRow(string cabinTypeName) => cabinTypeName.ToUpperInvariant() switch
     {
-        0 => 4,
-        1 => 4,
-        2 => 6,
+        "VIP" => 3,
+        "FIRST CLASS" => 4,
+        "BUSINESS" => 6,
         _ => 6
     };
 
-    private static string GetSeatLetters(int index) => index switch
+    private static string GetSeatLetters(string cabinTypeName) => cabinTypeName.ToUpperInvariant() switch
     {
-        0 => "ACDF",
-        1 => "ACDF",
-        2 => "ABCDEF",
+        "VIP" => "ABC",
+        "FIRST CLASS" => "ACDF",
+        "BUSINESS" => "ABCDEF",
         _ => "ABCDEF"
     };
 }

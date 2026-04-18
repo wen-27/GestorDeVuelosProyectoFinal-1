@@ -1,5 +1,6 @@
 using Spectre.Console;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Application.Interfaces;
+using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Shared.ui;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.UI;
@@ -8,195 +9,160 @@ public sealed class CabinTypesMenu : IModuleUI
 {
     private readonly ICabinTypeService _service;
 
-    public string Key => "cabintypes";
-    public string Title => "Cabin Types";
-
     public CabinTypesMenu(ICabinTypeService service)
     {
         _service = service;
     }
+
+    public string Key => "cabin-types";
+    public string Title => "Tipos de Cabina";
 
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
             AnsiConsole.Clear();
-            AnsiConsole.Write(new Rule("[bold deepskyblue1] Cabin Types Management [/]").LeftJustified());
+            AnsiConsole.Write(new Rule("[bold deepskyblue1] Tipos de Cabina [/]").LeftJustified());
 
             var option = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("\n[grey]Use arrows to navigate, Enter to select[/]")
+                    .Title("\n[grey]Usa las flechas para navegar[/]")
                     .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
-                    .AddChoices("List all cabin types", "Create cabin type", "Delete cabin type", "Back")
-            );
+                    .AddChoices("Listar todos", "Crear tipo", "Actualizar tipo", "Eliminar por ID", "Eliminar por nombre", "Volver"));
 
             switch (option)
             {
-                case "List all cabin types": await ListAsync(); break;
-                case "Create cabin type":    await CreateAsync(); break;
-                case "Delete cabin type":    await DeleteAsync(); break;
-                case "Back":                 return;
+                case "Listar todos": await ListAsync(); break;
+                case "Crear tipo": await CreateAsync(); break;
+                case "Actualizar tipo": await UpdateAsync(); break;
+                case "Eliminar por ID": await DeleteByIdAsync(); break;
+                case "Eliminar por nombre": await DeleteByNameAsync(); break;
+                case "Volver": return;
             }
         }
     }
 
     private async Task ListAsync()
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[bold]All Cabin Types[/]").LeftJustified());
-
-        var cabinTypes = (await _service.GetAllAsync()).ToList();
-
-        if (!cabinTypes.Any())
-        {
-            AnsiConsole.MarkupLine("\n[yellow]No cabin types registered yet.[/]");
-        }
-        else
-        {
-            var table = new Table().Border(TableBorder.Rounded).BorderColor(Color.Grey);
-            table.AddColumn(new TableColumn("[bold grey]ID[/]").Centered());
-            table.AddColumn(new TableColumn("[bold grey]Name[/]"));
-
-            foreach (var item in cabinTypes)
-            {
-                // Usamos el .Value o el .ToString() que añadiste
-                table.AddRow(item.Id.ToString(), $"[white]{item.Name}[/]");
-            }
-
-            AnsiConsole.WriteLine();
-            AnsiConsole.Write(table);
-        }
+        RenderTable(await _service.GetAllAsync(), "Tipos de cabina");
         Pause();
     }
 
     private async Task CreateAsync()
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[bold]Create Cabin Type[/]").LeftJustified());
-
-        var name = AnsiConsole.Prompt(
-            new TextPrompt<string>("[deepskyblue1]Enter cabin type name (e.g. Business):[/]")
-                .Validate(n => n.Length >= 2 ? ValidationResult.Success() : ValidationResult.Error("[red]Too short![/]"))
-        );
-
+        var name = PromptRequiredText("Nombre del tipo:");
         try
         {
             await _service.CreateAsync(name);
-            AnsiConsole.MarkupLine("\n[green]✔ Cabin type created successfully.[/]");
+            AnsiConsole.MarkupLine("\n[green]Tipo de cabina creado correctamente.[/]");
         }
         catch (Exception ex)
         {
-            AnsiConsole.MarkupLine($"\n[red]Error: {ex.Message}[/]");
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
         }
         Pause();
     }
 
-    private async Task DeleteAsync()
+    private async Task UpdateAsync()
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[bold red]Delete Cabin Type[/]").LeftJustified());
-        AnsiConsole.WriteLine();
-
-        var cabinTypes = (await _service.GetAllAsync()).ToList();
-        if (!cabinTypes.Any()) { AnsiConsole.MarkupLine("[yellow]Empty list.[/]"); Pause(); return; }
-
-        var method = AnsiConsole.Prompt(
-            new SelectionPrompt<string>()
-                .Title("[deepskyblue1]Delete by:[/]")
-                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
-                .AddChoices("Name", "ID", "Cancel")
-        );
-
-        if (method == "Cancel") return;
-
-        string target;
-
-        if (method == "Name")
+        var id = PromptPositiveInt("ID del tipo:");
+        var current = (await _service.GetAllAsync()).FirstOrDefault(x => x.Id.Value == id);
+        if (current is null)
         {
-            var CabinTypes = (await _service.GetAllAsync()).ToList();
-
-            if (cabinTypes.Count == 0)
-            {
-                AnsiConsole.MarkupLine("\n[yellow]No cabin types to delete.[/]");
-                Pause();
-                return;
-            }
-
-            var choices = cabinTypes.Select(c => $"{c.Name.Value}  [{c.Id.Value}]").ToList();
-            choices.Add("Cancel");
-
-            var selected = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                .Title("[deepskyblue1]Select a cabin type to delete:[/]")
-                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
-                .PageSize(10)
-                .AddChoices(choices)
-            );
-
-            if (selected == "Cancel") return;
-            target = selected.Split("  [")[0].Trim();
-        }
-        else
-        {
-            target = AnsiConsole.Prompt(
-                new TextPrompt<string>("[deepskyblue1]Enter cabin type ID:[/]")
-                    .Validate(c =>
-                    {
-                        var cleaned = c.Trim().ToUpper();
-                        return cleaned.Length is >= 2 and <= 3 && cleaned.All(char.IsLetter)
-                            ? ValidationResult.Success()
-                            : ValidationResult.Error("[red]ID must be between 2 and 30 characters.[/]");
-                    })
-            );
+            AnsiConsole.MarkupLine("\n[yellow]No se encontró el tipo de cabina.[/]");
+            Pause();
+            return;
         }
 
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Panel($"[bold red]{target}[/]")
-            .Header("[red]About to delete[/]")
-            .BorderColor(Color.Red));
-        AnsiConsole.MarkupLine("\n[red]Warning:[/] This action cannot be undone.");
-
-        var confirm = AnsiConsole.Prompt(
-            new SelectionPrompt<string>()
-                .Title("\nAre you sure?")
-                .HighlightStyle(new Style(foreground: Color.Red))
-                .AddChoices("Yes, delete", "No, cancel")
-        );
-
-        if (confirm == "Yes, delete")
+        var name = PromptRequiredText("Nuevo nombre:", current.Name.Value);
+        try
         {
-            try
-            {
-                await AnsiConsole.Status()
-                    .StartAsync("Deleting...", async _ =>
-                    {
-                        if (method == "Name")
-                            await _service.DeleteByNameAsync(target);
-                        else
-                            await _service.DeleteByIdAsync(int.Parse(target));
-                    });
-
-                AnsiConsole.MarkupLine("\n[green]Cabin type deleted successfully.[/]");
-            }
-            catch (InvalidOperationException ex)
-            {
-                AnsiConsole.MarkupLine($"\n[red]Error: {ex.Message}[/]");
-            }
+            await _service.UpdateAsync(id, name);
+            AnsiConsole.MarkupLine("\n[green]Tipo de cabina actualizado correctamente.[/]");
         }
-        else
+        catch (Exception ex)
         {
-            AnsiConsole.MarkupLine("\n[yellow]Operation cancelled.[/]");
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
         }
-
         Pause();
     }
+
+    private async Task DeleteByIdAsync()
+    {
+        var id = PromptPositiveInt("ID del tipo a eliminar:");
+        if (!AnsiConsole.Confirm("¿Confirmas la eliminación?", false))
+        {
+            Pause();
+            return;
+        }
+
+        try
+        {
+            await _service.DeleteByIdAsync(id);
+            AnsiConsole.MarkupLine("\n[green]Tipo de cabina eliminado correctamente.[/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
+        }
+        Pause();
+    }
+
+    private async Task DeleteByNameAsync()
+    {
+        var name = PromptRequiredText("Nombre del tipo a eliminar:");
+        if (!AnsiConsole.Confirm("¿Confirmas la eliminación?", false))
+        {
+            Pause();
+            return;
+        }
+
+        try
+        {
+            await _service.DeleteByNameAsync(name);
+            AnsiConsole.MarkupLine("\n[green]Tipo de cabina eliminado correctamente.[/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"\n[red]{ex.Message}[/]");
+        }
+        Pause();
+    }
+
+    private static void RenderTable(IEnumerable<CabinType> items, string title)
+    {
+        var list = items.ToList();
+        if (list.Count == 0)
+        {
+            AnsiConsole.MarkupLine("\n[yellow]No hay registros para mostrar.[/]");
+            return;
+        }
+
+        var table = new Table()
+            .Title(title)
+            .Border(TableBorder.Rounded)
+            .BorderColor(Color.Grey)
+            .AddColumn("[bold grey]ID[/]")
+            .AddColumn("[bold grey]Nombre[/]");
+
+        foreach (var item in list)
+            table.AddRow(item.Id.Value.ToString(), item.Name.Value);
+
+        AnsiConsole.Write(table);
+    }
+
+    private static int PromptPositiveInt(string label)
+        => AnsiConsole.Prompt(new TextPrompt<int>($"[deepskyblue1]{label}[/]")
+            .Validate(v => v > 0 ? ValidationResult.Success() : ValidationResult.Error("[red]Debe ser mayor que cero.[/]")));
+
+    private static string PromptRequiredText(string label, string? current = null)
+        => AnsiConsole.Prompt(new TextPrompt<string>($"[deepskyblue1]{label}[/]")
+            .DefaultValue(current ?? string.Empty)
+            .Validate(v => string.IsNullOrWhiteSpace(v) ? ValidationResult.Error("[red]Campo obligatorio.[/]") : ValidationResult.Success())).Trim();
 
     private static void Pause()
     {
         AnsiConsole.WriteLine();
-        AnsiConsole.Prompt(
-            new TextPrompt<string>("[grey]Press Enter to continue...[/]")
-                .AllowEmpty()
-        );
+        AnsiConsole.Prompt(new TextPrompt<string>("[grey]Presiona Enter para continuar...[/]").AllowEmpty());
     }
 }

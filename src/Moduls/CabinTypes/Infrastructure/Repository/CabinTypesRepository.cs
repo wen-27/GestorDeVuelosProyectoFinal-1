@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using GestorDeVuelosProyectoFinal.src.Shared.Context;
-using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Aggregate;
+using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.ValueObject;
+using GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.src.Shared.Context;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.Infrastructure.Repository;
 
@@ -17,63 +18,49 @@ public sealed class CabinTypesRepository : ICabinTypesRepository
 
     public async Task<CabinType?> GetByIdAsync(CabinTypesId id)
     {
-        return await _context.Set<CabinType>()
-            .FirstOrDefaultAsync(x => x.Id == id);
-    }
-
-    public async Task<CabinType?> GetByIdIntAsync(int id)
-    {
-        // Usamos el método Create del Value Object para la comparación
-        return await _context.Set<CabinType>()
-            .FirstOrDefaultAsync(x => x.Id == CabinTypesId.Create(id));
+        var entity = await _context.CabinTypes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id.Value);
+        return entity is null ? null : CabinType.FromPrimitives(entity.Id, entity.Name);
     }
 
     public async Task<CabinType?> GetByNameAsync(CabinTypesName name)
     {
-        return await _context.Set<CabinType>()
-            .FirstOrDefaultAsync(x => x.Name == name);
+        var normalized = name.Value.Trim();
+        var entity = await _context.CabinTypes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Name.ToLower() == normalized.ToLower());
+        return entity is null ? null : CabinType.FromPrimitives(entity.Id, entity.Name);
     }
 
-    public async Task<CabinType?> GetByNameStringAsync(string name)
-    {
-        return await _context.Set<CabinType>()
-            .FirstOrDefaultAsync(x => x.Name == CabinTypesName.Create(name));
-    }
+    public Task<CabinType?> GetByNameStringAsync(string name)
+        => GetByNameAsync(CabinTypesName.Create(name));
 
     public async Task<IEnumerable<CabinType>> GetAllAsync()
     {
-        return await _context.Set<CabinType>().ToListAsync();
+        var entities = await _context.CabinTypes.AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+        return entities.Select(x => CabinType.FromPrimitives(x.Id, x.Name));
     }
 
     public async Task SaveAsync(CabinType cabinType)
     {
-        await _context.Set<CabinType>().AddAsync(cabinType);
-        await _context.SaveChangesAsync();
+        await _context.CabinTypes.AddAsync(new CabinTypeEntity
+        {
+            Name = cabinType.Name.Value
+        });
     }
 
     public async Task UpdateAsync(CabinType cabinType)
     {
-        _context.Set<CabinType>().Update(cabinType);
-        await _context.SaveChangesAsync();
+        var entity = await _context.CabinTypes.FirstOrDefaultAsync(x => x.Id == cabinType.Id.Value);
+        if (entity is null)
+            throw new InvalidOperationException($"Cabin type with id '{cabinType.Id.Value}' not found.");
+
+        entity.Name = cabinType.Name.Value;
     }
 
     public async Task DeleteAsync(CabinTypesId id)
     {
-        var cabinType = await GetByIdAsync(id);
-        if (cabinType != null)
-        {
-            _context.Set<CabinType>().Remove(cabinType);
-            await _context.SaveChangesAsync();
-        }
-    }
-
-    public async Task DeleteByNameAsync(string name)
-    {
-        var cabinType = await GetByNameStringAsync(name);
-        if (cabinType != null)
-        {
-            _context.Set<CabinType>().Remove(cabinType);
-            await _context.SaveChangesAsync();
-        }
+        var entity = await _context.CabinTypes.FirstOrDefaultAsync(x => x.Id == id.Value);
+        if (entity is not null)
+            _context.CabinTypes.Remove(entity);
     }
 }
