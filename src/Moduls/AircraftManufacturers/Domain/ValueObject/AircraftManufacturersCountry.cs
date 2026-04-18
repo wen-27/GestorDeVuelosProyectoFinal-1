@@ -17,4 +17,6 @@ public sealed class AircraftManufacturersCountry
 
         return new AircraftManufacturersCountry(value.Trim());
     }
+
+    public override string ToString() => Value;
 }

@@ -17,4 +17,6 @@ public sealed class AircraftManufacturersName
 
         return new AircraftManufacturersName(value.Trim());
     }
+
+    public override string ToString() => Value;
 }
