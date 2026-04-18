@@ -18,6 +18,7 @@ using GestorDeVuelosProyectoFinal.Moduls.PeoplePhones.Infrastructure.Persistence
 using GestorDeVuelosProyectoFinal.Moduls.PhoneCodes.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Airlines.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Airports.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Infrastructure.Persistence.Entities;
 
 
 
@@ -45,6 +46,7 @@ public class AppDbContext : DbContext
     public DbSet<AirlineEntity> Airlines { get; set; } = null!;
     public DbSet<AirportEntity> Airports { get; set; } = null!;
     public DbSet<AirportRouteReferenceEntity> AirportRouteReferences { get; set; } = null!;
+    public DbSet<AirportAirlineEntity> AirportAirlines { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -71,6 +73,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new AirlineEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AirportEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AirportRouteReferenceEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AirportAirlineEntityConfiguration());
     }
 
 }

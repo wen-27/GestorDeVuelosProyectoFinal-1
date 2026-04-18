@@ -1,17 +1,16 @@
-using System;
+namespace GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Domain.ValueObject;
 
-namespace GestorDeVuelosProyectoFinal.src.Moduls.AirportAirline.Domain.ValueObject;
-
-public class AirportAirlineStartDate
+public sealed record AirportAirlineStartDate
 {
     public DateTime Value { get; }
+
     private AirportAirlineStartDate(DateTime value) => Value = value;
 
     public static AirportAirlineStartDate Create(DateTime value)
     {
-        if (value == DateTime.MinValue)
-            throw new ArgumentException("El campo start_date no puede ser igual a DateTime.MinValue");
+        if (value == default)
+            throw new ArgumentException("La fecha de inicio no es válida.");
 
-        return new AirportAirlineStartDate(value);
+        return new AirportAirlineStartDate(value.Date);
     }
 }
