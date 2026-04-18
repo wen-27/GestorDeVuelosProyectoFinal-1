@@ -237,4 +237,3 @@ public sealed class StaffAvailabilityMenu : IModuleUI
         AnsiConsole.MarkupLine("\nPresione [grey]ENTER[/] para continuar...");
         Console.ReadLine();
     }
-}

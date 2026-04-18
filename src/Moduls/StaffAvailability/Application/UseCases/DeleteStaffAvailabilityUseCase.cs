@@ -35,4 +35,4 @@ public sealed class DeleteStaffAvailabilityUseCase
         await _unitOfWork.SaveChangesAsync();
         return affected;
     }
-}
+

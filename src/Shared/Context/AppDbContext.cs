@@ -59,7 +59,12 @@ public class AppDbContext : DbContext
     public DbSet<FlightAssignmentStaffReferenceEntity> FlightAssignmentStaffReferences { get; set; } = null!;
     public DbSet<FutureFlightReferenceEntity> FutureFlightReferences { get; set; } = null!;
     public DbSet<AvailabilityStateEntity> AvailabilityStates { get; set; } = null!;
+
     public DbSet<StaffAvailabilityEntity> StaffAvailabilities { get; set; } = null!;
+
+
+    public DbSet<StaffAvailabilityStateReferenceEntity> StaffAvailabilityStateReferences { get; set; } = null!;
+     public DbSet<StaffAvailabilityEntity> StaffAvailabilities { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -94,6 +99,9 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new FlightAssignmentStaffReferenceEntityConfiguration());
         modelBuilder.ApplyConfiguration(new FutureFlightReferenceEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AvailabilityStateEntityConfiguration());
+
+        modelBuilder.ApplyConfiguration(new StaffAvailabilityStateReferenceEntityConfiguration());
+
         modelBuilder.ApplyConfiguration(new StaffAvailabilityEntityConfiguration());
     }
 
