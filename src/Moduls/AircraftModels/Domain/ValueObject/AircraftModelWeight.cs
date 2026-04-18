@@ -8,8 +8,8 @@ public sealed record AircraftModelWeight
     {
         if (value.HasValue && value < 0)
             throw new ArgumentException("El peso máximo de despegue no puede ser negativo.", nameof(value));
-        if (value.HasValue && value > 50000)
-            throw new ArgumentException("El peso máximo de despegue no puede superar 10000 Kg.", nameof(value));
+        if (value.HasValue && value > 1000000)
+            throw new ArgumentException("El peso máximo de despegue no puede superar 1000000 kg.", nameof(value));
         return new AircraftModelWeight(value);
     }
     public override string ToString() => Value?.ToString() ?? "N/A";

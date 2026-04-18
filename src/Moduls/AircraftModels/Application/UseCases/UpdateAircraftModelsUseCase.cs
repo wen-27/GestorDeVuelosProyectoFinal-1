@@ -1,57 +1,57 @@
+using Microsoft.EntityFrameworkCore;
+using GestorDeVuelosProyectoFinal.Moduls.AircraftModels.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Domain.ValueObject;
-using GestorDeVuelosProyectoFinal.src.Shared.Contracts; // Para el IUnitOfWork
+using GestorDeVuelosProyectoFinal.src.Shared.Context;
+using GestorDeVuelosProyectoFinal.src.Shared.Contracts;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Application.UseCases;
 
 public sealed class UpdateAircraftModelsUseCase
 {
-    private readonly IAircraftModelsRepository _aircraftModelsRepository;
+    private readonly IAircraftModelsRepository _repository;
+    private readonly AppDbContext _context;
     private readonly IUnitOfWork _unitOfWork;
 
     public UpdateAircraftModelsUseCase(
-        IAircraftModelsRepository aircraftModelsRepository, 
+        IAircraftModelsRepository repository,
+        AppDbContext context,
         IUnitOfWork unitOfWork)
     {
-        _aircraftModelsRepository = aircraftModelsRepository;
+        _repository = repository;
+        _context = context;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<AircraftModel> ExecuteAsync(
-        int id, 
-        string name, 
-        int maxCapacity, 
-        decimal? weight, 
-        decimal? fuelConsumption, 
-        int? cruiseSpeed, 
-        int? cruiseAltitude, 
+        int id,
+        int manufacturerId,
+        string name,
+        int maxCapacity,
+        decimal? weight,
+        decimal? fuelConsumption,
+        int? cruiseSpeed,
+        int? cruiseAltitude,
         CancellationToken cancellationToken = default)
     {
+        var model = await _repository.FindByIdAsync(AircraftModelId.Create(id), cancellationToken)
+            ?? throw new KeyNotFoundException($"AircraftModel with id '{id}' was not found.");
 
-        var aircraftModelId = AircraftModelId.Create(id);
+        var manufacturerExists = await _context.AircraftManufacturers
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == manufacturerId, cancellationToken);
 
-        var existingAircraftModel = await _aircraftModelsRepository.FindByIdAsync(aircraftModelId, cancellationToken);
+        if (!manufacturerExists)
+            throw new InvalidOperationException($"El fabricante con ID '{manufacturerId}' no existe.");
 
-        if (existingAircraftModel is null)
-        {
-            throw new KeyNotFoundException($"AircraftModel with id '{id}' was not found.");
-        }
+        var duplicate = await _repository.FindByNameAsync(AircraftModelName.Create(name), cancellationToken);
+        if (duplicate is not null && duplicate.Id.Value != id && duplicate.ManufacturerId.Value == manufacturerId)
+            throw new InvalidOperationException($"Ya existe un modelo '{name}' para el fabricante '{manufacturerId}'.");
 
-        var updatedAircraftModel = AircraftModel.Create(
-            id, 
-            name, 
-            maxCapacity, 
-            weight, 
-            fuelConsumption, 
-            cruiseSpeed, 
-            cruiseAltitude
-        );
-
-        await _aircraftModelsRepository.UpdateAsync(updatedAircraftModel, cancellationToken);
-
+        model.Update(manufacturerId, name, maxCapacity, weight, fuelConsumption, cruiseSpeed, cruiseAltitude);
+        await _repository.UpdateAsync(model, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return updatedAircraftModel;
+        return model;
     }
 }

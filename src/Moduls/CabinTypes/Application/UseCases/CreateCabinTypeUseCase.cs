@@ -2,14 +2,17 @@ namespace GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Application.UseCases;
 
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Aggregate;
+using GestorDeVuelosProyectoFinal.src.Shared.Contracts;
 
 public sealed class CreateCabinTypeUseCase
 {
     private readonly ICabinTypesRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CreateCabinTypeUseCase(ICabinTypesRepository repository)
+    public CreateCabinTypeUseCase(ICabinTypesRepository repository, IUnitOfWork unitOfWork)
     {
         _repository = repository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task Execute(string name)
@@ -23,5 +26,6 @@ public sealed class CreateCabinTypeUseCase
         var cabinType = CabinType.Create(name);
 
         await _repository.SaveAsync(cabinType);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

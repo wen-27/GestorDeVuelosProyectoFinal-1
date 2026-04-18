@@ -13,12 +13,17 @@ public sealed class CabinSeatLetters
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Las letras de los asientos son obligatorias.");
 
-        if (value.Length != expectedCount)
-            throw new ArgumentException($"La cantidad de letras ({value.Length}) no coincide con los asientos por fila ({expectedCount}).");
+        var normalized = value.Trim().ToUpperInvariant();
 
-        if (value.Any(c => !char.IsLetter(c)))
+        if (normalized.Length != expectedCount)
+            throw new ArgumentException($"La cantidad de letras ({normalized.Length}) no coincide con los asientos por fila ({expectedCount}).");
+
+        if (normalized.Any(c => !char.IsLetter(c)))
             throw new ArgumentException("Las letras de los asientos solo pueden contener caracteres alfabéticos.");
 
-        return new CabinSeatLetters(value.ToUpper().Trim());
+        if (normalized.Distinct().Count() != normalized.Length)
+            throw new ArgumentException("Las letras de los asientos no pueden repetirse.");
+
+        return new CabinSeatLetters(normalized);
     }
 }

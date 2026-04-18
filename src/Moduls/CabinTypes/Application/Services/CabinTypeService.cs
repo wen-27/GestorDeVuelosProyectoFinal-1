@@ -1,42 +1,32 @@
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Application.UseCases;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Aggregate;
+using GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.Application.UseCases;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.Application.Services;
 
-public  class CabinTypeService : ICabinTypeService
+public sealed class CabinTypeService : ICabinTypeService
 {
-    public Task CreateAsync(string name)
+    private readonly CreateCabinTypeUseCase _create;
+    private readonly GetCabinTypesUseCase _get;
+    private readonly UpdateCabinTypeUseCase _update;
+    private readonly DeleteCabinTypeUseCase _delete;
+
+    public CabinTypeService(
+        CreateCabinTypeUseCase create,
+        GetCabinTypesUseCase get,
+        UpdateCabinTypeUseCase update,
+        DeleteCabinTypeUseCase delete)
     {
-        throw new NotImplementedException();
+        _create = create;
+        _get = get;
+        _update = update;
+        _delete = delete;
     }
 
-    public Task DeleteByIdAsync(int id)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task DeleteByNameAsync(string name)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<IEnumerable<CabinType>> GetAllAsync()
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task UpdateAsync(int id, string name)
-    {
-        throw new NotImplementedException();
-    }
-
-    public interface ICabinTypeService
-{
-    Task CreateAsync(string name);
-    Task<IEnumerable<CabinTypeResponse>> GetAllAsync(); 
-    Task DeleteByIdAsync(int id);
-    Task UpdateAsync(int id, string name); 
-    Task DeleteByNameAsync(string name);
-}
+    public Task CreateAsync(string name) => _create.Execute(name);
+    public Task<IEnumerable<CabinType>> GetAllAsync() => _get.Execute();
+    public Task UpdateAsync(int id, string name) => _update.Execute(id, name);
+    public Task DeleteByIdAsync(int id) => _delete.ExecuteByIdAsync(id);
+    public Task DeleteByNameAsync(string name) => _delete.ExecuteByNameAsync(name);
 }

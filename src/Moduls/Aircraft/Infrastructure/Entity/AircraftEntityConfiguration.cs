@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using GestorDeVuelosProyectoFinal.Moduls.Airlines.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Entity;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Infrastructure.Entity;
 
@@ -7,7 +9,6 @@ public sealed class AircraftEntityConfiguration : IEntityTypeConfiguration<Aircr
 {
     public void Configure(EntityTypeBuilder<AircraftEntity> builder)
     {
-        // Esta configuración deja explícito que la tabla real para la FK es "aircraft".
         builder.ToTable("aircraft");
 
         builder.HasKey(x => x.Id);
@@ -18,7 +19,7 @@ public sealed class AircraftEntityConfiguration : IEntityTypeConfiguration<Aircr
             .IsRequired();
 
         builder.Property(x => x.AircraftModelId)
-            .HasColumnName("aircraft_model_id")
+            .HasColumnName("model_id")
             .IsRequired();
 
         builder.Property(x => x.AirlinesId)
@@ -30,12 +31,26 @@ public sealed class AircraftEntityConfiguration : IEntityTypeConfiguration<Aircr
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.HasIndex(x => x.Registration)
+            .IsUnique();
+
         builder.Property(x => x.DateManufactured)
-            .HasColumnName("date_manufactured")
-            .IsRequired();
+            .HasColumnName("manufactured_date")
+            .HasColumnType("date")
+            .IsRequired(false);
 
         builder.Property(x => x.IsActive)
             .HasColumnName("is_active")
             .IsRequired();
+
+        builder.HasOne<AircraftModelsEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.AircraftModelId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<AirlineEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.AirlinesId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

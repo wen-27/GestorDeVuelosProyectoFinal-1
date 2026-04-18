@@ -1,71 +1,65 @@
 using Microsoft.EntityFrameworkCore;
-using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Repositories;
+using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Shared.Context;
-using GestorDeVuelosProyectoFinal.src.Shared.Contracts;
-using AircraftAggregate =GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
-
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Infrastructure.Persistence.seeders;
 
 public sealed class AircraftSeeder
 {
     private readonly AppDbContext _context;
-    private readonly IAircraftRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public AircraftSeeder(
-        AppDbContext context,
-        IAircraftRepository repository,
-        IUnitOfWork unitOfWork)
+    public AircraftSeeder(AppDbContext context)
     {
         _context = context;
-        _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
-    public async Task SeedAsync()
+    public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        var aircraftModelIds = await _context.AircraftModels
+        var modelIds = await _context.AircraftModels
             .AsNoTracking()
             .OrderBy(x => x.Id)
             .Select(x => x.Id)
-            .Take(4)
-            .ToListAsync();
+            .Take(3)
+            .ToListAsync(cancellationToken);
 
-        // Este seder hacerlo cuando este la tabla airlines
-
-        // Revisar cuando este la tabla airlines
-
-        /*
-        var airlinesids = await _context.Airlines
+        var airlineIds = await _context.Airlines
             .AsNoTracking()
+            .Where(x => x.IsActive)
             .OrderBy(x => x.Id)
             .Select(x => x.Id)
-            .Take(4)
-            .ToListAsync();
-        */
-        /*
+            .Take(3)
+            .ToListAsync(cancellationToken);
 
-        if (aircraftModelIds.Count == 0 || aircraftModelIds.Count == 0)
+        if (modelIds.Count == 0 || airlineIds.Count == 0)
             return;
 
-        foreach (var aircraftModelId in aircraftModelIds)
+        var seedData = new[]
         {
-            var startRow = 1;
+            new { Registration = "HK-1001", ModelId = modelIds[0], AirlineId = airlineIds[0], ManufacturedDate = new DateTime(2018, 5, 12), IsActive = true },
+            new { Registration = "HK-1002", ModelId = modelIds[Math.Min(1, modelIds.Count - 1)], AirlineId = airlineIds[Math.Min(1, airlineIds.Count - 1)], ManufacturedDate = new DateTime(2019, 8, 22), IsActive = true },
+            new { Registration = "HK-1003", ModelId = modelIds[Math.Min(2, modelIds.Count - 1)], AirlineId = airlineIds[Math.Min(2, airlineIds.Count - 1)], ManufacturedDate = new DateTime(2017, 2, 10), IsActive = true }
+        };
 
-            for (int index = 0; index < aircraftModelIds.Count; index++)
+        var existingRegistrations = await _context.Aircrafts
+            .AsNoTracking()
+            .Select(x => x.Registration)
+            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase, cancellationToken);
+
+        foreach (var seed in seedData)
+        {
+            if (existingRegistrations.Contains(seed.Registration))
+                continue;
+
+            await _context.Aircrafts.AddAsync(new AircraftEntity
             {
-                var airlinesId = airlinesIds[index];
-                var duplicate = await _repository.GetByAircraftModelsAndAirlinesAsync(aircraftModelId, airlinesId);
-                if (duplicate is not null)
-                {
-                    startRow += GetRowBlockSize(index);
-                    continue;
-                }
+                AircraftModelId = seed.ModelId,
+                AirlinesId = seed.AirlineId,
+                Registration = seed.Registration,
+                DateManufactured = seed.ManufacturedDate,
+                IsActive = seed.IsActive
+            }, cancellationToken);
+        }
 
-                var rowBlock = GetRowBlockSize(index);
-                var seatsPerRow = GetSeatsPerRow(index);
-                var seatLetters = GetSeatLetters(index);
-                */
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

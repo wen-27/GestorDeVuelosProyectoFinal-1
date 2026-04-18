@@ -1,12 +1,10 @@
-using System;
 using Microsoft.EntityFrameworkCore;
-using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
+using GestorDeVuelosProyectoFinal.Moduls.Airlines.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Shared.Context;
-
-using aircraftAggregate = GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate.Aircraft;
+using AircraftAggregate = GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate.Aircraft;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Infrastructure.Repository;
 
@@ -19,7 +17,12 @@ public sealed class AircraftRepository : IAircraftRepository
         _context = context;
     }
 
-    public async Task<aircraftAggregate?> GetByIdAsync(AircraftId id, CancellationToken cancellationToken = default)
+    public async Task AddAsync(AircraftAggregate aircraft, CancellationToken cancellationToken = default)
+    {
+        await _context.Aircrafts.AddAsync(MapToEntity(aircraft), cancellationToken);
+    }
+
+    public async Task<AircraftAggregate?> GetByIdAsync(AircraftId id, CancellationToken cancellationToken = default)
     {
         var entity = await _context.Aircrafts
             .AsNoTracking()
@@ -28,7 +31,27 @@ public sealed class AircraftRepository : IAircraftRepository
         return entity is null ? null : MapToDomain(entity);
     }
 
-    public async Task<IReadOnlyCollection<aircraftAggregate>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<AircraftAggregate?> GetByRegistrationAsync(AircraftRegistration registration, CancellationToken cancellationToken = default)
+    {
+        var entity = await _context.Aircrafts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Registration == registration.Value, cancellationToken);
+
+        return entity is null ? null : MapToDomain(entity);
+    }
+
+    public async Task<IReadOnlyCollection<AircraftAggregate>> GetByAirlineIdAsync(AirlinesId airlineId, CancellationToken cancellationToken = default)
+    {
+        var entities = await _context.Aircrafts
+            .AsNoTracking()
+            .Where(x => x.AirlinesId == airlineId.Value)
+            .OrderBy(x => x.Registration)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(MapToDomain).ToList();
+    }
+
+    public async Task<IReadOnlyCollection<AircraftAggregate>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var entities = await _context.Aircrafts
             .AsNoTracking()
@@ -38,13 +61,15 @@ public sealed class AircraftRepository : IAircraftRepository
         return entities.Select(MapToDomain).ToList();
     }
 
-    public async Task AddAsync(aircraftAggregate aircraft, CancellationToken cancellationToken = default)
-    {
-        var entity = MapToEntity(aircraft);
-        await _context.Aircrafts.AddAsync(entity, cancellationToken);
-    }
+    public Task<bool> ExistsByRegistrationAsync(AircraftRegistration registration, CancellationToken cancellationToken = default)
+        => _context.Aircrafts.AnyAsync(x => x.Registration == registration.Value, cancellationToken);
 
-    public async Task UpdateAsync(aircraftAggregate aircraft, CancellationToken cancellationToken = default)
+    public Task<bool> HasFutureFlightsAsync(AircraftId id, CancellationToken cancellationToken = default)
+        => _context.FutureFlightReferences.AnyAsync(
+            x => x.AircraftId == id.Value && x.DepartureTime > DateTime.UtcNow,
+            cancellationToken);
+
+    public async Task UpdateAsync(AircraftAggregate aircraft, CancellationToken cancellationToken = default)
     {
         var entity = await _context.Aircrafts
             .FirstOrDefaultAsync(x => x.Id == aircraft.Id.Value, cancellationToken);
@@ -52,9 +77,11 @@ public sealed class AircraftRepository : IAircraftRepository
         if (entity is null)
             throw new InvalidOperationException($"Aircraft with id '{aircraft.Id.Value}' not found.");
 
+        entity.AircraftModelId = aircraft.ModelId.Value;
+        entity.AirlinesId = aircraft.AirlineId.Value;
         entity.Registration = aircraft.Registration.Value;
-        entity.DateManufactured = aircraft.DateManufactured.Value;
-        entity.IsActive = aircraft.IsActive;
+        entity.DateManufactured = aircraft.ManufacturedDate.Value;
+        entity.IsActive = aircraft.IsActive.Value;
     }
 
     public async Task<bool> DeleteByIdAsync(AircraftId id, CancellationToken cancellationToken = default)
@@ -69,30 +96,22 @@ public sealed class AircraftRepository : IAircraftRepository
         return true;
     }
 
-    private static aircraftAggregate MapToDomain(AircraftEntity entity)
-    {
-        return aircraftAggregate.Create(
+    private static AircraftAggregate MapToDomain(AircraftEntity entity)
+        => AircraftAggregate.FromPrimitives(
             entity.Id,
+            entity.AircraftModelId,
+            entity.AirlinesId,
             entity.Registration,
             entity.DateManufactured,
             entity.IsActive);
-    }
 
-    private static AircraftEntity MapToEntity(aircraftAggregate aircraft)
-    {
-        return new AircraftEntity
+    private static AircraftEntity MapToEntity(AircraftAggregate aircraft)
+        => new()
         {
-            Id = aircraft.Id.Value,
+            AircraftModelId = aircraft.ModelId.Value,
+            AirlinesId = aircraft.AirlineId.Value,
             Registration = aircraft.Registration.Value,
-            DateManufactured = aircraft.DateManufactured.Value,
-            IsActive = aircraft.IsActive,
-
-            // Estos campos siguen existiendo en la tabla/entity,
-            // pero hoy el agregado Aircraft no los modela todavía.
-            // Se dejan con 0 temporalmente hasta que el dominio incluya
-            // AircraftModelId y AirlinesId como parte del aggregate.
-            AircraftModelId = 0,
-            AirlinesId = 0
+            DateManufactured = aircraft.ManufacturedDate.Value,
+            IsActive = aircraft.IsActive.Value
         };
-    }
 }

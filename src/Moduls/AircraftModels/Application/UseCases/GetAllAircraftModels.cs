@@ -5,15 +5,13 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Application.UseC
 
 public sealed class GetAllAircraftModels
 {
-    private readonly IAircraftModelsRepository _aircraftModelsRepository;
+    private readonly IAircraftModelsRepository _repository;
 
-    public GetAllAircraftModels(IAircraftModelsRepository aircraftModelsRepository)
+    public GetAllAircraftModels(IAircraftModelsRepository repository)
     {
-        _aircraftModelsRepository = aircraftModelsRepository;
+        _repository = repository;
     }
 
     public Task<IReadOnlyCollection<AircraftModel>> ExecuteAsync(CancellationToken cancellationToken = default)
-    {
-        return _aircraftModelsRepository.FindAllAsync(cancellationToken);
-    }
+        => _repository.FindAllAsync(cancellationToken);
 }

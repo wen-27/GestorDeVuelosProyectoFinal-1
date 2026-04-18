@@ -12,9 +12,9 @@ public sealed class CabinTypeSeeder
     private static readonly string[] _cabinTypes = new[]
     {
         "Economy",
-        "Premium Economy",
         "Business",
-        "First Class"
+        "First Class",
+        "VIP"
     };
 
     public CabinTypeSeeder(AppDbContext context)

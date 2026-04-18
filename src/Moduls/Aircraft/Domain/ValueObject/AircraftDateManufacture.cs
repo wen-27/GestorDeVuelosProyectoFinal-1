@@ -1,18 +1,18 @@
-using System;
-
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
 
-public sealed class AircraftDateManufacture
+public sealed record AircraftDateManufacture
 {
-    public DateTime Value { get; }
-    private AircraftDateManufacture(DateTime value) => Value = value;
+    public DateTime? Value { get; }
 
-    public static AircraftDateManufacture Create(DateTime value)
+    private AircraftDateManufacture(DateTime? value) => Value = value;
+
+    public static AircraftDateManufacture Create(DateTime? value)
     {
-        if (value == DateTime.MinValue)
-            throw new ArgumentException("El campo date_manufacture no puede ser igual a DateTime.MinValue");
+        if (value.HasValue && value.Value.Date > DateTime.UtcNow.Date)
+            throw new ArgumentException("La fecha de fabricación no puede estar en el futuro.", nameof(value));
 
-        return new AircraftDateManufacture(value);
+        return new AircraftDateManufacture(value?.Date);
     }
-    public override string ToString() => Value.ToString();
+
+    public override string ToString() => Value?.ToString("yyyy-MM-dd") ?? "-";
 }

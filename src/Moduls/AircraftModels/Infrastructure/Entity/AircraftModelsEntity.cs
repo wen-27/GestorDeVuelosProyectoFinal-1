@@ -1,17 +1,17 @@
-using System;
 using GestorDeVuelosProyectoFinal.src.Moduls.AircraftManufacturers.Infrastructure.Entity;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.AircraftModels.Infrastructure.Entity;
 
-public class AircraftModelsEntity
+public sealed class AircraftModelsEntity
 {
     public int Id { get; set; }
-    public int AircraftManufacturerId { get; set; } //Fk
-    public string Name { get; set; } = null!;
-    public int Capacity { get; set; }
-    public decimal? Weight { get; set; }
-    public decimal? FuelConsumption { get; set; }
-    public int? CruiseSpeed { get; set; }
-    public int? CruiseAltitude { get; set; }
+    public int AircraftManufacturerId { get; set; }
+    public string ModelName { get; set; } = null!;
+    public int MaxCapacity { get; set; }
+    public decimal? MaxTakeoffWeightKg { get; set; }
+    public decimal? FuelConsumptionKgH { get; set; }
+    public int? CruiseSpeedKmh { get; set; }
+    public int? CruiseAltitudeFt { get; set; }
+
     public AircraftManufacturerEntity? Manufacturer { get; set; }
 }

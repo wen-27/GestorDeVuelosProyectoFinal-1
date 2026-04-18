@@ -1,15 +1,18 @@
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Domain.ValueObject;
+using GestorDeVuelosProyectoFinal.src.Shared.Contracts;
 
 namespace GestorDeVuelosProyectoFinal.Moduls.CabinTypes.Application.UseCases;
 
 public class UpdateCabinTypeUseCase
 {
     private readonly ICabinTypesRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateCabinTypeUseCase(ICabinTypesRepository repository)
+    public UpdateCabinTypeUseCase(ICabinTypesRepository repository, IUnitOfWork unitOfWork)
     {
         _repository = repository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task Execute(int id, string newName)
@@ -30,5 +33,6 @@ public class UpdateCabinTypeUseCase
 
         // 4. Persistir cambios
         await _repository.UpdateAsync(cabinType);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

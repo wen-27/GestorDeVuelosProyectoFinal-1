@@ -4,15 +4,15 @@ using AircraftAggregate = GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Application.UseCases;
 
-public sealed class GetAircraftByIdUseCase
+public sealed class GetAircraftByRegistrationUseCase
 {
     private readonly IAircraftRepository _repository;
 
-    public GetAircraftByIdUseCase(IAircraftRepository repository)
+    public GetAircraftByRegistrationUseCase(IAircraftRepository repository)
     {
         _repository = repository;
     }
 
-    public Task<AircraftAggregate?> ExecuteAsync(int id, CancellationToken cancellationToken = default)
-        => _repository.GetByIdAsync(AircraftId.Create(id), cancellationToken);
+    public Task<AircraftAggregate?> ExecuteAsync(string registration, CancellationToken cancellationToken = default)
+        => _repository.GetByRegistrationAsync(AircraftRegistration.Create(registration), cancellationToken);
 }
