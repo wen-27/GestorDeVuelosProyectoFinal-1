@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<AddressEntity> Addresses { get; set; } = null!;
     public DbSet<CabinTypeEntity> CabinTypes { get; set; } = null!;
     public DbSet<CabinConfiurationEntity> CabinConfigurations { get; set; } = null!;
+    public DbSet<AircraftModelsEntity> AircraftModel { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
