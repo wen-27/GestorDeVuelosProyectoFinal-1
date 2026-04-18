@@ -17,6 +17,7 @@ using GestorDeVuelosProyectoFinal.Moduls.People.Infrastructure.Persistence.Entit
 using GestorDeVuelosProyectoFinal.src.Moduls.PeopleEmails.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.PeoplePhones.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.PhoneCodes.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.src.Moduls.Customers.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.Airlines.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.Airports.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Infrastructure.Persistence.Entities;
@@ -41,6 +42,7 @@ public class AppDbContext : DbContext
     public DbSet<AircraftModelsEntity> AircraftModel { get; set; } = null!;
     public DbSet<EmailDomainsEntity> EmailDomains { get; set; } = null!;
     public DbSet<PersonEmailEntity> PersonEmails { get; set; } = null!;
+    public DbSet<CustomerEntity> Customers { get; set; } = null!;
     public DbSet<DocumentTypeEntity> DocumentTypes { get; set; } = null!;
     public DbSet<PersonEntity> Persons { get; set; } = null!;
     public DbSet<PeoplePhoneEntity> PeoplePhones { get; set; } = null!;
@@ -78,6 +80,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new EmailDomainsEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PersonEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PersonEmailEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new CustomerEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PeoplePhoneEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PhoneCodeEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AirlineEntityConfiguration());

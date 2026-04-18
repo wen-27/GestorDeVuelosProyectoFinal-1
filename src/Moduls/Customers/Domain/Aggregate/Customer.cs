@@ -1,29 +1,35 @@
 using GestorDeVuelosProyectoFinal.src.Moduls.Customers.Domain.ValueObject;
-using Microsoft.VisualBasic;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Customers.Domain.Aggregate;
 
 public sealed class Customer
 {
-    // Propiedades con set privado para garantizar el encapsulamiento
     public CustomersId Id { get; private set; } = null!;
-    public CustomersCreadoEn CreadoEn { get; private set; } = null!;
+    public int PersonId { get; private set; }
+    public CustomersCreatedAt CreatedAt { get; private set; } = null!;
 
-    // Constructor vacío para ORMs como Entity Framework (necesario a veces)
     private Customer() { }
 
-    // Constructor principal privado
-    private Customer(CustomersId id, CustomersCreadoEn creadoEn)
+    private Customer(CustomersId id, int personId, CustomersCreatedAt createdAt)
     {
         Id = id;
-        CreadoEn = creadoEn;
+        PersonId = personId;
+        CreatedAt = createdAt;
     }
 
-    public static Customer Create(Guid id, DateTime creadoEn)
+    public static Customer Create(int personId, DateTime createdAt)
+    {
+        return new Customer(
+            CustomersId.Create(0),
+            personId,
+            CustomersCreatedAt.Create(createdAt));
+    }
+
+    public static Customer FromPrimitives(int id, int personId, DateTime createdAt)
     {
         return new Customer(
             CustomersId.Create(id),
-            CustomersCreadoEn.Create(creadoEn)
-        );
+            personId,
+            CustomersCreatedAt.Create(createdAt));
     }
 }
