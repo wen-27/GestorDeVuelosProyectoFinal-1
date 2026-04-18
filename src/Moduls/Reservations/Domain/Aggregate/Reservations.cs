@@ -34,7 +34,7 @@ public sealed class Reservations
     }
 
     public static Reservations Create(
-        Guid id,
+        int id,
         DateTime date,
         decimal totalAmount,
         DateTime expiresAt,

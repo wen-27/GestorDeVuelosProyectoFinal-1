@@ -15,7 +15,7 @@ public sealed class FlightAssignment
 
     private FlightAssignment() { }
 
-    public static FlightAssignment Create(Guid id, Guid flightId, Guid staffId, Guid flightRoleId)
+    public static FlightAssignment Create(int id, int flightId, int staffId, int flightRoleId)
     {
         return new FlightAssignment
         {

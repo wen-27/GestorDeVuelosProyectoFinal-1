@@ -1,6 +1,6 @@
 using System;
 
-namespace GestorDeVuelosProyectoFinal.Moduls.Aircraft.Domain.ValueObject;
+namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
 
 public sealed class AircraftActive
 {

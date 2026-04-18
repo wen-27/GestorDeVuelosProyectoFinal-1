@@ -14,7 +14,7 @@ public sealed class Passengers
         Id = id;
     }
 
-    public static Passengers Create(Guid id)
+    public static Passengers Create(int id)
     {
         return new Passengers(
             PassengersId.Create(id)

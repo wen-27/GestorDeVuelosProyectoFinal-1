@@ -1,7 +1,6 @@
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
-using GestorDeVuelosProyectoFinal.Moduls.Aircraft.Domain.ValueObject;
 
-namespace GestorDeVuelosProyectoFinal.Moduls.Aircraft.Domain.Aggregate;
+namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
 
 public sealed class Aircraft
 {
@@ -26,13 +25,13 @@ public sealed class Aircraft
     }
     public static Aircraft Create(
         int id, 
-        string AircraftRegistration, 
+        string aircraftRegistration, 
         DateTime dateManufactured, 
         bool isActive)
     {
         return new Aircraft(
             AircraftId.Create(id),
-            Domain.ValueObject.AircraftRegistration.Create(AircraftRegistration),
+            AircraftRegistration.Create(aircraftRegistration),
             AircraftDateManufacture.Create(dateManufactured),
             AircraftActive.Create(isActive)
         );

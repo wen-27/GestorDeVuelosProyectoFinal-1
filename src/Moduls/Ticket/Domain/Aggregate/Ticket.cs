@@ -28,7 +28,7 @@ public sealed class Ticket
     }
 
     public static Ticket Create(
-        Guid id,
+        int id,
         string code,
         DateTime issueDate,
         DateTime updatedAt,

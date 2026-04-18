@@ -15,7 +15,7 @@ public sealed class FlightReservation
 
     private FlightReservation() { }
 
-    public static FlightReservation Create(Guid id, Guid reservationId, Guid flightId, decimal partialValue)
+    public static FlightReservation Create(int id, int reservationId, int flightId, decimal partialValue)
     {
         return new FlightReservation
         {

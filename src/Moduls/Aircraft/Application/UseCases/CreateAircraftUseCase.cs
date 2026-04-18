@@ -1,4 +1,3 @@
-using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
 using GestorDeVuelosProyectoFinal.src.Shared.Contracts;
@@ -16,7 +15,7 @@ public sealed class CreateAircraftUseCase
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Domain.Aggregate.Aircraft> ExecuteAsync(
+    public async Task<src.Moduls.Aircraft.Domain.Aggregate.Aircraft> ExecuteAsync(
         int id,
         string aircraftRegistration, 
         DateTime dateManufactured, 
@@ -31,7 +30,7 @@ public sealed class CreateAircraftUseCase
             throw new InvalidOperationException($"Avión con id '{aircraftId}' ya existe.");
         }
 
-        var aircraft = Domain.Aggregate.Aircraft.Create(id, aircraftRegistration, dateManufactured, isActive);
+        var aircraft = src.Moduls.Aircraft.Domain.Aggregate.Aircraft.Create(id, aircraftRegistration, dateManufactured, isActive);
 
         await _aircraftRepository.AddAsync(aircraft, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -26,7 +26,7 @@ public sealed class Person // <--- Cambiado a Person
         string lastNames, 
         DateTime? birthDate, 
         char? gender, 
-        Guid? addressId)
+        int? addressId)
     {
         return new Person // <--- Cambiado a new Person
         {

@@ -1,4 +1,3 @@
-using GestorDeVuelosProyectoFinal.Moduls.Aircraft.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.Repositories;
 using GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
 
@@ -13,7 +12,7 @@ public sealed class GetAircraftByIdUseCase
         _repository = repository;
     }
 
-    public async Task<Domain.Aggregate.Aircraft?> ExecuteAsync(AircraftId id, CancellationToken cancellationToken = default)
+    public async Task<src.Moduls.Aircraft.Domain.Aggregate.Aircraft?> ExecuteAsync(AircraftId id, CancellationToken cancellationToken = default)
     {
         return await _repository.GetByIdAsync(id, cancellationToken);
     }

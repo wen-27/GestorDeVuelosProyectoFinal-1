@@ -4,13 +4,13 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.Passengers.Domain.ValueObject;
 
 public sealed class PassengersId
 {
-    public Guid Value { get; }
+    public int Value { get; }
 
-    private PassengersId(Guid value) => Value = value;
+    private PassengersId(int value) => Value = value;
 
-    public static PassengersId Create(Guid value)
+    public static PassengersId Create(int value)
     {
-        if (value == Guid.Empty)
+        if (value <= 0)
             throw new ArgumentException("El id del pasajero no es válido", nameof(value));
 
         return new PassengersId(value);

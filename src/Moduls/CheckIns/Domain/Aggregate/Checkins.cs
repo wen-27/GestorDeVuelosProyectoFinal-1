@@ -23,14 +23,14 @@ public sealed class Checkin
     private Checkin() { }
 
     public static Checkin Create(
-        Guid id, 
+        int id, 
         string boardingPass, 
         DateTime date, 
         bool hasBaggage, 
         decimal weight,
-        Guid ticketId,
-        Guid personalId,
-        Guid seatId)
+        int ticketId,
+        int personalId,
+        int seatId)
     {
         return new Checkin
         {

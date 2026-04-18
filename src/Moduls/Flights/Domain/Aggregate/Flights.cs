@@ -41,7 +41,7 @@ public sealed class Flights
     }
 
     public static Flights Create(
-        Guid id,
+        int id,
         string code,
         DateTime departureTime,
         DateTime estimatedArrivalTime,

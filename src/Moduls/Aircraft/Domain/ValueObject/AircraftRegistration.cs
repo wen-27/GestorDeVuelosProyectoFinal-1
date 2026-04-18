@@ -1,4 +1,4 @@
-namespace GestorDeVuelosProyectoFinal.Moduls.Aircraft.Domain.ValueObject;
+namespace GestorDeVuelosProyectoFinal.src.Moduls.Aircraft.Domain.ValueObject;
 
 public sealed class AircraftRegistration
 {
@@ -17,4 +17,3 @@ public sealed class AircraftRegistration
     }
     public override string ToString() => Value.ToString();
 }
-
