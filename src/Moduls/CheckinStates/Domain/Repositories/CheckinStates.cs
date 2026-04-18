@@ -5,8 +5,8 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.CheckinStates.Domain.Repositori
 
 public interface ICheckinStatesRepository
 {
-    Task<CheckinState?> GetByIdAsync(CheckinStatesId id);
-    Task<IEnumerable<CheckinState>> GetAllAsync();
-    Task SaveAsync(CheckinState checkinState);
-    Task DeleteAsync(CheckinStatesId id);
+    Task<CheckinState?> GetByIdAsync(CheckinStatesId id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<CheckinState>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task SaveAsync(CheckinState checkinState, CancellationToken cancellationToken = default);
+    Task DeleteAsync(CheckinStatesId id, CancellationToken cancellationToken = default);
 }
