@@ -4,11 +4,12 @@ namespace GestorDeVuelosProyectoFinal.Moduls.CabinConfiguration.Domain.ValueObje
 
 public sealed class CabinConfigurationId
 {
-    public Guid Value { get; }
-    private CabinConfigurationId(Guid value) => Value = value;
-    public static CabinConfigurationId Create(Guid value)
+    public int Value { get; }
+    private CabinConfigurationId(int value) => Value = value;
+    public static CabinConfigurationId Create(int value)
     {
-        if (value == Guid.Empty) throw new ArgumentException("El ID de configuración no es válido.");
+        if (value < 0) throw new ArgumentException("El ID debe ser mayor o igual a cero.");
         return new CabinConfigurationId(value);
     }
+    public override string ToString() => Value.ToString();
 }
