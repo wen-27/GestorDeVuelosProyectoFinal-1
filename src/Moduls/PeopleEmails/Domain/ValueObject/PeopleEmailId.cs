@@ -9,6 +9,7 @@ public sealed class PersonEmailsId
     private PersonEmailsId(int value) => Value = value;
 
     public static PersonEmailsId Create(int value)
+    public static PersonEmailsId Create(int value)
     {
         if (value < 0)
             throw new ArgumentException("El id del email de la persona no es valido.", nameof(value));
@@ -18,3 +19,4 @@ public sealed class PersonEmailsId
 
     public override string ToString() => Value.ToString();
 }
+

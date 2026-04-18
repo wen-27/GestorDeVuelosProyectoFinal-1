@@ -15,6 +15,8 @@ using GestorDeVuelosProyectoFinal.Moduls.DocumentTypes.Infrastructure.Persistenc
 using GestorDeVuelosProyectoFinal.src.Moduls.EmailDomains.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.Moduls.People.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.src.Moduls.PeopleEmails.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.PeoplePhones.Infrastructure.Persistence.Entities;
+using GestorDeVuelosProyectoFinal.Moduls.PhoneCodes.Infrastructure.Persistence.Entities;
 
 
 
@@ -38,6 +40,8 @@ public class AppDbContext : DbContext
 
     public DbSet<DocumentTypeEntity> DocumentTypes { get; set; } = null!;
     public DbSet<PersonEntity> Persons { get; set; } = null!;
+    public DbSet<PeoplePhoneEntity> PeoplePhones { get; set; } = null!;
+    public DbSet<PhoneCodeEntity> PhoneCodes { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -59,7 +63,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new EmailDomainsEntityConfiguration());
         modelBuilder.ApplyConfiguration(new PersonEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new PersonEmailEntityConfiguration());
     }
 
 }

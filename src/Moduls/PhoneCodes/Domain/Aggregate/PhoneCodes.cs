@@ -18,12 +18,27 @@ public sealed class PhoneCode
         CountryName = countryName;
     }
 
-    public static PhoneCode Create(Guid id, string code, string countryName)
+    public static PhoneCode Create(string code, string countryName)
+    {
+        return new PhoneCode
+        {
+            Code = PhoneCodesCountryCode.Create(code),
+            CountryName = PhoneCodesCountryName.Create(countryName)
+        };
+    }
+
+    public static PhoneCode FromPrimitives(int id, string code, string countryName)
     {
         return new PhoneCode(
             PhoneCodesId.Create(id),
             PhoneCodesCountryCode.Create(code),
             PhoneCodesCountryName.Create(countryName)
         );
+    }
+
+    public void Update(string code, string countryName)
+    {
+        Code = PhoneCodesCountryCode.Create(code);
+        CountryName = PhoneCodesCountryName.Create(countryName);
     }
 }
