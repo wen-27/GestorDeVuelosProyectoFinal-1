@@ -1,17 +1,10 @@
-using System;
+namespace GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Domain.ValueObject;
 
-namespace GestorDeVuelosProyectoFinal.src.Moduls.AirportAirline.Domain.ValueObject;
-
-public class AirportAirlineActive
+public sealed record AirportAirlineIsActive
 {
     public bool Value { get; }
-    private AirportAirlineActive(bool value)
-    {
-        Value = value;
-    }
 
-    public static AirportAirlineActive Create(bool value)
-    {
-        return new AirportAirlineActive(value);
-    }
+    private AirportAirlineIsActive(bool value) => Value = value;
+
+    public static AirportAirlineIsActive Create(bool value) => new(value);
 }

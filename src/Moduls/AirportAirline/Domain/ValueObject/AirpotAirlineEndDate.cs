@@ -1,17 +1,16 @@
-using System;
+namespace GestorDeVuelosProyectoFinal.Moduls.AirportAirline.Domain.ValueObject;
 
-namespace GestorDeVuelosProyectoFinal.src.Moduls.AirportAirline.Domain.ValueObject;
-
-public class AirpotAirlinesEndDate
+public sealed class AirportAirlineEndDate
 {
- public DateTime Value { get; }
- private AirpotAirlinesEndDate(DateTime value) => Value = value;
+    public DateTime? Value { get; }
 
- public static AirpotAirlinesEndDate Create(DateTime value)
- {
-     if (value == DateTime.MinValue)
-         throw new ArgumentException("El campo end_date no puede ser igual a DateTime.MinValue");
+    private AirportAirlineEndDate(DateTime? value) => Value = value;
 
-     return new AirpotAirlinesEndDate(value);
- }
+    public static AirportAirlineEndDate Create(DateTime? value)
+    {
+        if (value == default(DateTime))
+            return new AirportAirlineEndDate(null);
+
+        return new AirportAirlineEndDate(value?.Date);
+    }
 }
