@@ -128,3 +128,4 @@ public sealed class StaffAvailabilityRepository : IStaffAvailabilityRepository
         if (endsAt <= startsAt)
             throw new ArgumentException("La fecha final debe ser mayor que la fecha inicial.");
     }
+}

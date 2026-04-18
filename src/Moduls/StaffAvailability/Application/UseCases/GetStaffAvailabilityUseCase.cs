@@ -19,4 +19,4 @@ public sealed class GetStaffAvailabilityUseCase
     public Task<IEnumerable<StaffAvailabilityRecord>> ExecuteByStaffIdAsync(int staffId) => _repository.GetByStaffIdAsync(PersonalId.Create(staffId));
     public Task<IEnumerable<StaffAvailabilityRecord>> ExecuteByDateRangeAsync(DateTime startsAt, DateTime endsAt) => _repository.GetByDateRangeAsync(startsAt, endsAt);
     public Task<bool> ExecuteHasBlockingAvailabilityAsync(int staffId, DateTime startsAt, DateTime endsAt) => _repository.HasBlockingAvailabilityAsync(PersonalId.Create(staffId), startsAt, endsAt);
-velop
+}

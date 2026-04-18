@@ -62,11 +62,8 @@ public class AppDbContext : DbContext
     public DbSet<FutureFlightReferenceEntity> FutureFlightReferences { get; set; } = null!;
     public DbSet<AvailabilityStateEntity> AvailabilityStates { get; set; } = null!;
 
-    public DbSet<StaffAvailabilityEntity> StaffAvailabilities { get; set; } = null!;
-
-
     public DbSet<StaffAvailabilityStateReferenceEntity> StaffAvailabilityStateReferences { get; set; } = null!;
-     public DbSet<StaffAvailabilityEntity> StaffAvailabilities { get; set; } = null!;
+    public DbSet<StaffAvailabilityEntity> StaffAvailabilities { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
