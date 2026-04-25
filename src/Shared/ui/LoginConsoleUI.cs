@@ -104,10 +104,19 @@ public class LoginConsoleUI
             attempts++;
 
             if (attempts < maxAttempts)
-                AnsiConsole.MarkupLine($"[yellow] Intento {attempts}/{maxAttempts}. Intenta de nuevo.[/]");
+            {
+                var action = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title($"[yellow]Intento {attempts}/{maxAttempts} fallido. ¿Qué deseas hacer?[/]")
+                        .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                        .AddChoices("Intentar de nuevo", "Volver al menú principal"));
+
+                if (action == "Volver al menú principal")
+                    return false;
+            }
         }
 
-        AnsiConsole.MarkupLine("[red]❌ Demasiados intentos fallidos. Saliendo del sistema...[/]");
+        AnsiConsole.MarkupLine("[red]❌ Demasiados intentos fallidos. Volviendo al menú principal.[/]");
         return false;
     }
 

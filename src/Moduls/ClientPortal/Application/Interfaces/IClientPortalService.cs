@@ -44,9 +44,11 @@ public interface IClientPortalService
 
     Task CancelBookingAsync(int bookingId, int clientId, CancellationToken cancellationToken);
 
+    Task CancelTicketAsync(int ticketId, int clientId, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<TicketSummary>> GetMyTicketsAsync(int clientId, CancellationToken cancellationToken);
 
-    Task<(TicketSummary Ticket, string? BoardingPassNumber, string? SeatCode, string? CabinTypeName, bool IsCheckedIn)> GetTicketDetailsAsync(
+    Task<(TicketSummary Ticket, string? BoardingPassNumber, string? SeatCode, string? CabinTypeName, string? Gate, DateTime? BoardingAt, string? BoardingPassStatus, bool IsCheckedIn)> GetTicketDetailsAsync(
         int ticketId,
         int clientId,
         CancellationToken cancellationToken);
@@ -70,7 +72,7 @@ public interface IClientPortalService
         CancellationToken cancellationToken);
 
     Task<(string BoardingPassNumber, string SeatCode, string CabinTypeName, string PassengerFullName, string FlightCode,
-        string OriginIata, string DestinationIata, DateTime DepartureAt, DateTime ArrivalAt,
+        string OriginIata, string DestinationIata, string Gate, DateTime DepartureAt, DateTime ArrivalAt, DateTime BoardingAt, string BoardingPassStatus,
         decimal AdditionalSeatChoiceCharge)> PerformOnlineCheckinAsync(
         int clientId,
         int passengerReservationId,

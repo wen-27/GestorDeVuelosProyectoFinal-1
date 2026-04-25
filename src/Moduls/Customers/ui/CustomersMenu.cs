@@ -2,7 +2,9 @@ using GestorDeVuelosProyectoFinal.Moduls.People.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.Moduls.People.Domain.Aggregate;
 using GestorDeVuelosProyectoFinal.src.Moduls.Customers.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.src.Moduls.Customers.Domain.Aggregate;
+using GestorDeVuelosProyectoFinal.src.Shared.Context;
 using GestorDeVuelosProyectoFinal.src.Shared.ui;
+using Microsoft.EntityFrameworkCore;
 using Spectre.Console;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Customers.ui;
@@ -13,14 +15,16 @@ public sealed class CustomersMenu : IModuleUI
 {
     private readonly ICustomersService _service;
     private readonly IPersonService _people;
+    private readonly AppDbContext _context;
 
     public string Key => "customers";
     public string Title => "🧾  Gestión de clientes";
 
-    public CustomersMenu(ICustomersService service, IPersonService people)
+    public CustomersMenu(ICustomersService service, IPersonService people, AppDbContext context)
     {
         _service = service;
         _people = people;
+        _context = context;
     }
 
     public async Task RunAsync(CancellationToken cancellationToken = default)
@@ -173,26 +177,33 @@ public sealed class CustomersMenu : IModuleUI
             return;
         }
 
-        var names = (await _people.GetAllAsync())
-            .ToDictionary(p => p.Id.Value, p => $"{p.FirstName.Value} {p.LastNames.Value}");
+        var personLabels = await GetCustomerLabelsByPersonIdAsync(customers.Select(x => x.PersonId));
+        var reservationInfo = await GetReservationInfoByCustomerAsync(customers.Select(x => x.Id.Value));
 
         var table = new Table()
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Grey)
             .AddColumn("[bold]ID[/]")
             .AddColumn("[bold]Persona[/]")
+            .AddColumn("[bold]Reservas[/]")
+            .AddColumn("[bold]Titulares de tiquetes[/]")
             .AddColumn("[bold]Registrado[/]");
 
         // En el listado mostramos el nombre de la persona si existe; así evitamos una tabla fría solo con IDs.
         foreach (var item in customers.OrderBy(x => x.Id.Value))
         {
-            var personLabel = names.TryGetValue(item.PersonId, out var n)
-                ? $"{item.PersonId} · {Markup.Escape(n)}"
+            var personLabel = personLabels.TryGetValue(item.PersonId, out var label)
+                ? $"{item.PersonId} · {Markup.Escape(label)}"
                 : item.PersonId.ToString();
+            var info = reservationInfo.TryGetValue(item.Id.Value, out var value)
+                ? value
+                : new CustomerReservationInfo(false, "Sin reservas");
 
             table.AddRow(
                 item.Id.Value.ToString(),
                 personLabel,
+                info.HasBookings ? "[green]Sí[/]" : "[grey]No[/]",
+                Markup.Escape(info.TicketHolders),
                 item.CreatedAt.Value.ToString("yyyy-MM-dd HH:mm:ss"));
         }
 
@@ -209,10 +220,10 @@ public sealed class CustomersMenu : IModuleUI
             return;
         }
 
-        var person = await _people.GetByIdAsync(customer.PersonId);
-        var personLine = person is null
-            ? customer.PersonId.ToString()
-            : $"{customer.PersonId} · {Markup.Escape($"{person.FirstName.Value} {person.LastNames.Value}")}";
+        var personLabels = await GetCustomerLabelsByPersonIdAsync(new[] { customer.PersonId });
+        var personLine = personLabels.TryGetValue(customer.PersonId, out var label)
+            ? $"{customer.PersonId} · {Markup.Escape(label)}"
+            : customer.PersonId.ToString();
 
         var panel = new Panel(
             $"ID cliente: [bold]{customer.Id.Value}[/]\n" +
@@ -229,22 +240,104 @@ public sealed class CustomersMenu : IModuleUI
     private async Task<List<Customer>> GetValidCustomersAsync()
     {
         var customers = (await _service.GetAllAsync()).OrderBy(x => x.Id.Value).ToList();
-        var people = (await _people.GetAllAsync())
-            .Where(p => p.Id is not null)
-            .ToDictionary(p => p.Id.Value, p => p);
+        var validPersonIds = await _context.Persons
+            .AsNoTracking()
+            .Select(x => x.Id)
+            .ToHashSetAsync();
 
-        // Si hay clientes huérfanos por datos viejos o inconsistentes, los limpiamos
-        // para que el panel no muestre registros rotos.
-        var orphanCustomers = customers
-            .Where(c => !people.ContainsKey(c.PersonId))
-            .ToList();
-
-        foreach (var orphan in orphanCustomers)
-            await _service.DeleteAsync(orphan.Id.Value);
-
+        // Si hay clientes huérfanos por datos viejos o inconsistentes, simplemente
+        // los omitimos del menú. Listar no debe mutar datos ni disparar borrados.
         return customers
-            .Where(c => people.ContainsKey(c.PersonId))
+            .Where(c => validPersonIds.Contains(c.PersonId))
             .ToList();
+    }
+
+    private async Task<Dictionary<int, string>> GetCustomerLabelsByPersonIdAsync(IEnumerable<int> personIds)
+    {
+        var ids = personIds.Distinct().ToList();
+        if (ids.Count == 0)
+            return new Dictionary<int, string>();
+
+        var rows = await (
+            from person in _context.Persons.AsNoTracking()
+            join user in _context.Users.AsNoTracking() on person.Id equals user.Person_Id into userGroup
+            from user in userGroup.DefaultIfEmpty()
+            where ids.Contains(person.Id)
+            select new
+            {
+                person.Id,
+                person.FirstName,
+                person.LastName,
+                Username = user != null ? user.Username : null
+            })
+            .ToListAsync();
+
+        return rows.ToDictionary(
+            x => x.Id,
+            x => BuildCustomerDisplayName(x.FirstName, x.LastName, x.Username));
+    }
+
+    private async Task<Dictionary<int, CustomerReservationInfo>> GetReservationInfoByCustomerAsync(IEnumerable<int> customerIds)
+    {
+        var ids = customerIds.Distinct().ToList();
+        if (ids.Count == 0)
+            return new Dictionary<int, CustomerReservationInfo>();
+
+        var customersWithBookings = await _context.Bookings
+            .AsNoTracking()
+            .Where(x => ids.Contains(x.ClientId))
+            .Select(x => x.ClientId)
+            .Distinct()
+            .ToListAsync();
+
+        var holders = await (
+            from booking in _context.Bookings.AsNoTracking()
+            join bookingFlight in _context.BookingFlights.AsNoTracking() on booking.Id equals bookingFlight.BookingId
+            join flightReservation in _context.FlightReservations.AsNoTracking() on bookingFlight.Id equals flightReservation.BookingFlightId
+            join passengerReservation in _context.PassengerReservations.AsNoTracking() on flightReservation.Id equals passengerReservation.Flight_Reservation_Id
+            join passenger in _context.Passengers.AsNoTracking() on passengerReservation.Passenger_Id equals passenger.Id
+            join person in _context.Persons.AsNoTracking() on passenger.PersonId equals person.Id
+            where ids.Contains(booking.ClientId)
+            select new
+            {
+                booking.ClientId,
+                HolderName = (person.FirstName + " " + person.LastName).Trim()
+            })
+            .ToListAsync();
+
+        var holdersByCustomer = holders
+            .GroupBy(x => x.ClientId)
+            .ToDictionary(
+                group => group.Key,
+                group => string.Join(", ", group
+                    .Select(x => x.HolderName)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct()
+                    .OrderBy(x => x)));
+
+        return ids.ToDictionary(
+            id => id,
+            id => new CustomerReservationInfo(
+                customersWithBookings.Contains(id),
+                holdersByCustomer.TryGetValue(id, out var holderNames) && !string.IsNullOrWhiteSpace(holderNames)
+                    ? holderNames
+                    : "Sin reservas"));
+    }
+
+    private sealed record CustomerReservationInfo(bool HasBookings, string TicketHolders);
+
+    private static string BuildCustomerDisplayName(string firstName, string lastName, string? username)
+    {
+        var f = (firstName ?? "").Trim();
+        var l = (lastName ?? "").Trim();
+        var u = (username ?? "").Trim();
+
+        if (u.Length > 0
+            && f.Equals("Cliente", StringComparison.OrdinalIgnoreCase)
+            && l.Equals(u, StringComparison.OrdinalIgnoreCase))
+            return u;
+
+        return u.Length > 0 ? $"{f} {l} (@{u})".Trim() : $"{f} {l}".Trim();
     }
 
     private async Task<int?> PromptAvailablePersonIdAsync()

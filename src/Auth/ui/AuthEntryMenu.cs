@@ -1,6 +1,8 @@
 using GestorDeVuelosProyectoFinal.src.Moduls.ClientPortal.UI;
+using GestorDeVuelosProyectoFinal.src.Moduls.Customers.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.SystemRoles.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.Users.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.Moduls.People.Infrastructure.Persistence.Entities;
 using GestorDeVuelosProyectoFinal.src.Shared.Context;
 using GestorDeVuelosProyectoFinal.src.Shared.Session;
 using GestorDeVuelosProyectoFinal.src.Shared.UI;
@@ -101,12 +103,23 @@ public sealed class AuthEntryMenu
         RenderAccessHeader();
 
         AnsiConsole.Write(
-            new Panel(new Markup("[grey]Crea una cuenta nueva. Se registrará en la tabla [bold]users[/] (AppDbContext).[/]"))
+            new Panel(new Markup("[grey]Crea una cuenta nueva. Se registrarán [bold]persona[/], [bold]usuario[/] y [bold]cliente[/] enlazados.[/]"))
                 .Header("[bold white]Registrar usuario[/]")
                 .Border(BoxBorder.Rounded)
                 .BorderColor(Color.DeepSkyBlue1));
 
         AnsiConsole.WriteLine();
+
+        using var scope = _scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var documentTypeId = await PromptDocumentTypeIdAsync(db, cancellationToken);
+        if (documentTypeId is null)
+            return;
+
+        var documentNumber = PromptNumericText("Número de documento", 1, 30);
+        var firstName = PromptRequiredText("Nombres", 2, 80);
+        var lastName = PromptRequiredText("Apellidos", 2, 80);
 
         var username = AnsiConsole.Prompt(
             new TextPrompt<string>("[deepskyblue1]Nuevo usuario[/] [grey]❯[/]")
@@ -137,13 +150,46 @@ public sealed class AuthEntryMenu
 
         try
         {
-            using var scope = _scopes.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
             var u = username.Trim();
             var exists = await db.Users.AsNoTracking().AnyAsync(x => x.Username == u, cancellationToken);
             if (exists)
-                throw new InvalidOperationException($"El usuario '{u}' ya existe.");
+            {
+                await HandleExistingUsernameAsync(u, cancellationToken);
+                return;
+            }
+
+            var person = await db.Persons.FirstOrDefaultAsync(
+                x => x.DocumentTypeId == documentTypeId.Value && x.DocumentNumber == documentNumber,
+                cancellationToken);
+
+            if (person is not null)
+            {
+                var personAlreadyLinked = await db.Users.AsNoTracking()
+                    .AnyAsync(x => x.Person_Id == person.Id, cancellationToken);
+
+                if (personAlreadyLinked)
+                    throw new InvalidOperationException("Ya existe un usuario registrado para esa persona/documento.");
+            }
+
+            var now = DateTime.UtcNow;
+            person ??= new PersonEntity
+            {
+                DocumentTypeId = documentTypeId.Value,
+                DocumentNumber = documentNumber,
+                FirstName = firstName,
+                LastName = lastName,
+                BirthDate = null,
+                Gender = null,
+                AddressId = null,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            if (person.Id == 0)
+            {
+                db.Persons.Add(person);
+                await db.SaveChangesAsync(cancellationToken);
+            }
 
             // Las cuentas nuevas entran como Client para caer directo al portal del usuario.
             var role = await db.SystemRoles.FirstOrDefaultAsync(r => r.Name == "Client", cancellationToken);
@@ -154,18 +200,29 @@ public sealed class AuthEntryMenu
                 await db.SaveChangesAsync(cancellationToken);
             }
 
-            var now = DateTime.UtcNow;
             db.Users.Add(new UsersEntity
             {
                 Username = u,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(pass),
-                Person_Id = null,
+                Person_Id = person.Id,
                 Role_Id = role.Id,
                 IsActive = true,
                 LastAccess = null,
                 CreatedAt = now,
                 UpdatedAt = now
             });
+
+            var customerExists = await db.Customers.AsNoTracking()
+                .AnyAsync(x => x.PersonId == person.Id, cancellationToken);
+
+            if (!customerExists)
+            {
+                db.Customers.Add(new CustomerEntity
+                {
+                    PersonId = person.Id,
+                    CreatedAt = now
+                });
+            }
 
             await db.SaveChangesAsync(cancellationToken);
 
@@ -177,6 +234,87 @@ public sealed class AuthEntryMenu
             AnsiConsole.MarkupLine($"\n[red]{Markup.Escape(ex.Message)}[/]");
             await Task.Delay(1500, cancellationToken);
         }
+    }
+
+    private async Task HandleExistingUsernameAsync(string username, CancellationToken cancellationToken)
+    {
+        AnsiConsole.MarkupLine($"\n[yellow]El usuario '{Markup.Escape(username)}' ya existe.[/]");
+
+        var option = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[bold white]¿Qué deseas hacer ahora?[/]")
+                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                .AddChoices("Iniciar sesión", "Registrar usuario", "Volver al menú principal"));
+
+        switch (option)
+        {
+            case "Iniciar sesión":
+                await LoginFlowAsync(cancellationToken);
+                break;
+            case "Registrar usuario":
+                await RegisterFlowAsync(cancellationToken);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private static string PromptRequiredText(string label, int min, int max)
+    {
+        return AnsiConsole.Prompt(
+            new TextPrompt<string>($"[deepskyblue1]{label}[/] [grey]❯[/]")
+                .PromptStyle(new Style(foreground: Color.White))
+                .Validate(s =>
+                {
+                    var value = s?.Trim() ?? string.Empty;
+                    return value.Length >= min && value.Length <= max
+                        ? ValidationResult.Success()
+                        : ValidationResult.Error($"[red]Debe tener entre {min} y {max} caracteres.[/]");
+                }))
+            .Trim();
+    }
+
+    private static string PromptNumericText(string label, int min, int max)
+    {
+        return AnsiConsole.Prompt(
+            new TextPrompt<string>($"[deepskyblue1]{label}[/] [grey]❯[/]")
+                .PromptStyle(new Style(foreground: Color.White))
+                .Validate(s =>
+                {
+                    var value = s?.Trim() ?? string.Empty;
+                    if (value.Length < min || value.Length > max)
+                        return ValidationResult.Error($"[red]Debe tener entre {min} y {max} dígitos.[/]");
+
+                    return value.All(char.IsDigit)
+                        ? ValidationResult.Success()
+                        : ValidationResult.Error("[red]Solo puede contener dígitos.[/]");
+                }))
+            .Trim();
+    }
+
+    private static async Task<int?> PromptDocumentTypeIdAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        var docTypes = await db.DocumentTypes
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+
+        if (docTypes.Count == 0)
+            throw new InvalidOperationException("No hay tipos de documento registrados.");
+
+        var options = docTypes
+            .Select(x => $"{x.Code} · {x.Name}")
+            .ToList();
+
+        var selected = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[deepskyblue1]Tipo de documento[/]")
+                .PageSize(10)
+                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                .AddChoices(options));
+
+        var index = options.IndexOf(selected);
+        return index >= 0 ? docTypes[index].Id : null;
     }
 
     private async Task PostLoginAsync(CancellationToken cancellationToken)

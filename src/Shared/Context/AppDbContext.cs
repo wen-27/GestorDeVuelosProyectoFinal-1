@@ -65,6 +65,7 @@ using GestorDeVuelosProyectoFinal.src.Moduls.SystemRoles.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.Ticket.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.TicketStates.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.Users.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.Infrastructure.Entity;
 
 namespace GestorDeVuelosProyectoFinal.src.Shared.Context;
 
@@ -135,6 +136,7 @@ public class AppDbContext : DbContext
     public DbSet<TicketEntity> Tickets { get; set; } = null!;
     public DbSet<TicketEntity> tickets => Tickets;
     public DbSet<TicketStatesEntity> TicketStates { get; set; } = null!;
+    public DbSet<BoardingPassEntity> BoardingPasses { get; set; } = null!;
     public DbSet<SessionsEntity> Sessions { get; set; } = null!;
     public DbSet<UsersEntity> Users { get; set; } = null!;
     public DbSet<FlightAssignmentStaffReferenceEntity> FlightAssignmentStaffReferences { get; set; } = null!;
@@ -207,6 +209,7 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new SystemRolesEntityConfiguration());
         modelBuilder.ApplyConfiguration(new TicketEntityConfiguration());
         modelBuilder.ApplyConfiguration(new TicketStatesEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new BoardingPassEntityConfiguration());
         modelBuilder.ApplyConfiguration(new SessionsEntityConfiguration());
         modelBuilder.ApplyConfiguration(new UsersEntityConfiguration());
         modelBuilder.ApplyConfiguration(new FlightAssignmentStaffReferenceEntityConfiguration());

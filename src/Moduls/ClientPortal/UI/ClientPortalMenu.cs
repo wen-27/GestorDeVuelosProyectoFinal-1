@@ -38,7 +38,8 @@ public sealed class ClientPortalMenu : IModuleUI
                         "2. Mis reservas",
                         "3. Hacer check-in en línea",
                         "4. Mis tiquetes",
-                        "5. Cerrar sesión"));
+                        "5. Consultar pase de abordar",
+                        "6. Cerrar sesión"));
 
             switch (option)
             {
@@ -54,7 +55,10 @@ public sealed class ClientPortalMenu : IModuleUI
                 case "4. Mis tiquetes":
                     await MyTicketsAsync(cancellationToken);
                     break;
-                case "5. Cerrar sesión":
+                case "5. Consultar pase de abordar":
+                    await BoardingPassLookupAsync(cancellationToken);
+                    break;
+                case "6. Cerrar sesión":
                     return;
             }
         }
@@ -600,7 +604,7 @@ public sealed class ClientPortalMenu : IModuleUI
                         continue;
 
                     await _service.CancelBookingAsync(id, ctx.ClientId, cancellationToken);
-                    AnsiConsole.MarkupLine("\n[green]Reserva cancelada. Los tiquetes asociados quedaron en estado Voided.[/]");
+                    AnsiConsole.MarkupLine("\n[green]Reserva cancelada. Los tiquetes asociados quedaron en estado Cancelado.[/]");
                     Pause();
                 }
             }
@@ -719,7 +723,7 @@ public sealed class ClientPortalMenu : IModuleUI
                     if (!AnsiConsole.Confirm("Se asignará asiento aleatorio a cada pasajero pendiente. ¿Deseas continuar?", true))
                         continue;
 
-                    var results = new List<(string PassengerName, string SeatCode, string BoardingPassNumber)>();
+                    var results = new List<(string PassengerName, string SeatCode, string BoardingPassNumber, string Gate, DateTime BoardingAt)>();
                     foreach (var passenger in candidates.PendingPassengers)
                     {
                         var checkIn = await _service.PerformOnlineCheckinAsync(
@@ -731,7 +735,7 @@ public sealed class ClientPortalMenu : IModuleUI
                             utcNow: DateTime.UtcNow,
                             cancellationToken);
 
-                        results.Add((checkIn.PassengerFullName, checkIn.SeatCode, checkIn.BoardingPassNumber));
+                        results.Add((checkIn.PassengerFullName, checkIn.SeatCode, checkIn.BoardingPassNumber, checkIn.Gate, checkIn.BoardingAt));
                     }
 
                     AnsiConsole.Clear();
@@ -741,12 +745,16 @@ public sealed class ClientPortalMenu : IModuleUI
                         .BorderColor(Color.Grey)
                         .AddColumn("[bold grey]Pasajero[/]")
                         .AddColumn("[bold grey]Asiento[/]")
+                        .AddColumn("[bold grey]Puerta[/]")
+                        .AddColumn("[bold grey]Hora abordaje[/]")
                         .AddColumn("[bold grey]Pase de abordar[/]");
 
                     foreach (var item in results)
                         completedTable.AddRow(
                             Markup.Escape(item.PassengerName),
                             Markup.Escape(item.SeatCode),
+                            Markup.Escape(item.Gate),
+                            item.BoardingAt.ToString("yyyy-MM-dd HH:mm"),
                             Markup.Escape(item.BoardingPassNumber));
 
                     AnsiConsole.Write(completedTable);
@@ -795,11 +803,14 @@ public sealed class ClientPortalMenu : IModuleUI
                     singleCheckin.PassengerFullName,
                     singleCheckin.FlightCode,
                     $"{singleCheckin.OriginIata} → {singleCheckin.DestinationIata}",
+                    singleCheckin.Gate,
                     singleCheckin.DepartureAt,
                     singleCheckin.ArrivalAt,
+                    singleCheckin.BoardingAt,
                     singleCheckin.SeatCode,
                     singleCheckin.CabinTypeName,
                     singleCheckin.BoardingPassNumber,
+                    singleCheckin.BoardingPassStatus,
                     singleCheckin.AdditionalSeatChoiceCharge);
 
                 Pause();
@@ -877,6 +888,26 @@ public sealed class ClientPortalMenu : IModuleUI
                     AnsiConsole.MarkupLine("\n[yellow]Check-in pendiente.[/]");
                     AnsiConsole.MarkupLine($"[grey]Tiquete:[/] [white]{Markup.Escape(details.Ticket.TicketCode)}[/]");
                     AnsiConsole.MarkupLine($"[grey]Asiento:[/] [grey]— (se asigna al hacer check-in)[/]");
+
+                    var actions = new List<string> { "Volver" };
+                    if (!string.Equals(details.Ticket.TicketState, "Cancelado", StringComparison.OrdinalIgnoreCase))
+                        actions.Insert(0, "Cancelar tiquete");
+
+                    var action = AnsiConsole.Prompt(
+                        new SelectionPrompt<string>()
+                            .Title("\nAcción:")
+                            .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                            .AddChoices(actions));
+
+                    if (action == "Cancelar tiquete")
+                    {
+                        if (!AnsiConsole.Confirm("¿Confirmas la cancelación de este tiquete?", false))
+                            continue;
+
+                        await _service.CancelTicketAsync(ticketId, ctx.ClientId, cancellationToken);
+                        AnsiConsole.MarkupLine("\n[green]Tiquete cancelado correctamente.[/]");
+                    }
+
                     Pause();
                     continue;
                 }
@@ -885,15 +916,114 @@ public sealed class ClientPortalMenu : IModuleUI
                     details.Ticket.PassengerName,
                     details.Ticket.FlightCode,
                     $"{details.Ticket.OriginIata} → {details.Ticket.DestinationIata}",
+                    details.Gate ?? "—",
                     details.Ticket.DepartureAt,
                     details.Ticket.EstimatedArrivalAt,
+                    details.BoardingAt ?? details.Ticket.DepartureAt.AddMinutes(-45),
                     details.SeatCode ?? "—",
                     details.CabinTypeName ?? "—",
                     details.BoardingPassNumber ?? "—",
+                    details.BoardingPassStatus ?? "Activo",
                     0m);
 
                 Pause();
             }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"\n[red]{Markup.Escape(FormatError(ex))}[/]");
+            Pause();
+        }
+    }
+
+    private async Task BoardingPassLookupAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var ctx = await _service.EnsureClientContextAsync(cancellationToken);
+
+            AnsiConsole.Clear();
+            AnsiConsole.Write(new Rule("[bold deepskyblue1] Consultar pase de abordar [/]").LeftJustified());
+
+            var tickets = (await _service.GetMyTicketsAsync(ctx.ClientId, cancellationToken))
+                .OrderByDescending(t => t.DepartureAt)
+                .ToList();
+
+            if (tickets.Count == 0)
+            {
+                AnsiConsole.MarkupLine("\n[yellow]Aún no tienes tiquetes registrados.[/]");
+                Pause();
+                return;
+            }
+
+            var table = new Table()
+                .Border(TableBorder.Rounded)
+                .BorderColor(Color.Grey)
+                .AddColumn("[bold grey]Código tiquete[/]")
+                .AddColumn("[bold grey]Pasajero[/]")
+                .AddColumn("[bold grey]Vuelo[/]")
+                .AddColumn("[bold grey]Estado[/]");
+
+            foreach (var ticket in tickets)
+            {
+                table.AddRow(
+                    Markup.Escape(ticket.TicketCode),
+                    Markup.Escape(ticket.PassengerName),
+                    Markup.Escape(ticket.FlightCode),
+                    Markup.Escape(ticket.TicketState));
+            }
+
+            AnsiConsole.WriteLine();
+            AnsiConsole.Write(table);
+
+            var pick = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("\nSelecciona un tiquete para consultar su pase:")
+                    .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                    .AddChoices(tickets.Select(t => $"{t.TicketId}|{t.TicketCode}|{t.PassengerName}|{t.FlightCode}|{t.TicketState}").Append("Volver")));
+
+            if (pick == "Volver")
+                return;
+
+            var ticketId = int.Parse(pick.Split('|')[0]);
+            var details = await _service.GetTicketDetailsAsync(ticketId, ctx.ClientId, cancellationToken);
+            if (!details.IsCheckedIn)
+            {
+                AnsiConsole.MarkupLine("\n[yellow]Ese tiquete todavía no tiene check-in realizado.[/]");
+                var relatedCheckedInTickets = tickets
+                    .Where(t =>
+                        string.Equals(t.PassengerName, details.Ticket.PassengerName, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(t.TicketState, "Check-in realizado", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (relatedCheckedInTickets.Count > 0)
+                {
+                    AnsiConsole.MarkupLine("[grey]Para ese pasajero sí encontramos estos tiquetes con check-in:[/]");
+                    foreach (var candidate in relatedCheckedInTickets)
+                    {
+                        AnsiConsole.MarkupLine(
+                            $"[white]- {Markup.Escape(candidate.TicketCode)}[/]  [grey]· vuelo[/] [white]{Markup.Escape(candidate.FlightCode)}[/]  [grey]· estado[/] [white]{Markup.Escape(candidate.TicketState)}[/]");
+                    }
+                }
+                Pause();
+                return;
+            }
+
+            RenderBoardingPass(
+                details.Ticket.PassengerName,
+                details.Ticket.FlightCode,
+                $"{details.Ticket.OriginIata} → {details.Ticket.DestinationIata}",
+                details.Gate ?? "—",
+                details.Ticket.DepartureAt,
+                details.Ticket.EstimatedArrivalAt,
+                details.BoardingAt ?? details.Ticket.DepartureAt.AddMinutes(-45),
+                details.SeatCode ?? "—",
+                details.CabinTypeName ?? "—",
+                details.BoardingPassNumber ?? "—",
+                details.BoardingPassStatus ?? "Activo",
+                0m);
+
+            Pause();
         }
         catch (Exception ex)
         {
@@ -1471,14 +1601,16 @@ public sealed class ClientPortalMenu : IModuleUI
         string passenger,
         string flightCode,
         string route,
+        string gate,
         DateTime departureAt,
         DateTime arrivalAt,
+        DateTime boardingAt,
         string seatCode,
         string cabinType,
         string boardingPass,
+        string boardingPassStatus,
         decimal additionalSeatCharge = 0m)
     {
-        var boardingAt = departureAt.AddMinutes(-60);
         var feeLine = additionalSeatCharge > 0m
             ? $"\nCargo elección asiento: {additionalSeatCharge:0.00}"
             : "";
@@ -1494,8 +1626,9 @@ Salida:   {departureAt:HH:mm}
 Llegada:  {arrivalAt:HH:mm}
 Asiento:  {seatCode}  (único en este vuelo)
 Clase:    {cabinType}
-Grupo:    F
+Puerta:   {gate}
 Abordaje: {boardingAt:HH:mm}
+Estado:   {boardingPassStatus}
 Código:   {boardingPass}{feeLine}
 ══════════════════════════════════════";
 

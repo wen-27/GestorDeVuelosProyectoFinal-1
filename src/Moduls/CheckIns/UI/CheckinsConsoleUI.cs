@@ -1,272 +1,492 @@
-using Spectre.Console;
-using GestorDeVuelosProyectoFinal.src.Moduls.Checkins.Application.Interfaces;
-using GestorDeVuelosProyectoFinal.src.Shared.Session;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.Application.Interfaces;
+using GestorDeVuelosProyectoFinal.src.Moduls.ClientPortal.Application.Interfaces;
+using GestorDeVuelosProyectoFinal.src.Moduls.ClientPortal.Application.Models;
+using GestorDeVuelosProyectoFinal.src.Moduls.ClientPortal.Application.Support;
+using GestorDeVuelosProyectoFinal.src.Shared.Context;
 using GestorDeVuelosProyectoFinal.src.Shared.ui;
+using Microsoft.EntityFrameworkCore;
+using Spectre.Console;
 
 namespace GestorDeVuelosProyectoFinal.src.Moduls.Checkins.UI;
 
-public class CheckinsConsoleUI
+public sealed class CheckinsConsoleUI
 {
-    private readonly ICheckinsService _service;
+    private readonly IClientPortalService _clientPortalService;
+    private readonly IBoardingPassesService _boardingPassesService;
+    private readonly AppDbContext _db;
 
-    public CheckinsConsoleUI(ICheckinsService service)
+    public CheckinsConsoleUI(
+        IClientPortalService clientPortalService,
+        IBoardingPassesService boardingPassesService,
+        AppDbContext db)
     {
-        _service = service;
+        _clientPortalService = clientPortalService;
+        _boardingPassesService = boardingPassesService;
+        _db = db;
     }
 
-    public async Task ShowAsync()
+    public async Task ShowAsync(CancellationToken cancellationToken = default)
     {
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
             AnsiConsole.Clear();
-            AnsiConsole.Write(new FigletText("Check-ins").Color(Color.Blue));
+            AnsiConsole.Write(new FigletText("Check-in").Color(Color.Blue));
 
             var option = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .Title("[bold yellow]Selecciona una opción:[/]")
-                    .AddChoices(GetMenuOptions()));
+                    .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                    .AddChoices(
+                        "Realizar check-in",
+                        "Consultar pase de abordar",
+                        "Consultar pasajeros listos para abordar",
+                        "Volver"));
 
             switch (option)
             {
-                case "Listar check-ins":
-                    await ListAllAsync();
+                case "Realizar check-in":
+                    await PerformCheckinAsync(cancellationToken);
                     break;
-                case "Buscar por ID":
-                    await GetByIdAsync();
+                case "Consultar pase de abordar":
+                    await QueryBoardingPassAsync(cancellationToken);
                     break;
-                case "Crear check-in":
-                    await CreateAsync();
+                case "Consultar pasajeros listos para abordar":
+                    await QueryReadyPassengersAsync(cancellationToken);
                     break;
-                case "Actualizar estado":
-                    await UpdateAsync();
-                    break;
-                case "Eliminar check-in":
-                    await DeleteAsync();
-                    break;
-                case "Volver":
+                default:
                     return;
             }
-
-            AnsiConsole.WriteLine();
-            AnsiConsole.Markup("[grey]Presiona cualquier tecla para continuar...[/]");
-            Console.ReadKey();
         }
     }
 
-    private IEnumerable<string> GetMenuOptions()
+    private async Task PerformCheckinAsync(CancellationToken cancellationToken)
     {
-        var options = new List<string>
+        try
         {
-            "Listar check-ins",
-            "Buscar por ID"
+            var target = await ResolveTargetAsync(cancellationToken);
+            if (target is null)
+                return;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var candidates = await _clientPortalService.GetCheckinCandidatesAsync(
+                    target.ClientId,
+                    target.BookingId,
+                    target.FlightId,
+                    DateTime.UtcNow,
+                    cancellationToken);
+
+                AnsiConsole.Clear();
+                AnsiConsole.Write(new Rule("[bold deepskyblue1] Realizar check-in [/]").LeftJustified());
+                AnsiConsole.MarkupLine($"[grey]Reserva:[/] [white]{Markup.Escape(ReservationReferenceCodec.Encode(target.BookingId))}[/]");
+                AnsiConsole.MarkupLine($"[grey]Vuelo:[/] [white]{Markup.Escape(candidates.FlightCode)}[/]  [grey]Ruta:[/] [white]{Markup.Escape(candidates.OriginIata)} → {Markup.Escape(candidates.DestinationIata)}[/]");
+                AnsiConsole.MarkupLine($"[grey]Salida:[/] [white]{candidates.DepartureAt:yyyy-MM-dd HH:mm}[/]  [grey]Llegada:[/] [white]{candidates.ArrivalAt:yyyy-MM-dd HH:mm}[/]\n");
+
+                RenderPassengersTable("Pendientes por check-in", candidates.PendingPassengers, false);
+                RenderPassengersTable("Check-in realizado", candidates.CheckedInPassengers, true);
+
+                if (candidates.PendingPassengers.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("\n[green]Todos los pasajeros de este vuelo ya están listos para abordar.[/]");
+                    Pause();
+                    return;
+                }
+
+                var action = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title("\n¿Qué deseas hacer?")
+                        .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                        .AddChoices("Hacer check-in a un pasajero", "Hacer check-in a todos", "Volver"));
+
+                if (action == "Volver")
+                    return;
+
+                if (action == "Hacer check-in a todos")
+                {
+                    if (!AnsiConsole.Confirm("Se asignará asiento aleatorio a cada pasajero pendiente. ¿Deseas continuar?", true))
+                        continue;
+
+                    var completedTable = new Table()
+                        .Border(TableBorder.Rounded)
+                        .BorderColor(Color.Grey)
+                        .AddColumn("[bold grey]Pasajero[/]")
+                        .AddColumn("[bold grey]Asiento[/]")
+                        .AddColumn("[bold grey]Puerta[/]")
+                        .AddColumn("[bold grey]Hora abordaje[/]")
+                        .AddColumn("[bold grey]Pase[/]");
+
+                    foreach (var passenger in candidates.PendingPassengers)
+                    {
+                        var checkin = await _clientPortalService.PerformOnlineCheckinAsync(
+                            target.ClientId,
+                            passenger.PassengerReservationId,
+                            target.FlightId,
+                            desiredSeatCode: null,
+                            allowRandomSeat: true,
+                            utcNow: DateTime.UtcNow,
+                            cancellationToken);
+
+                        completedTable.AddRow(
+                            Markup.Escape(checkin.PassengerFullName),
+                            Markup.Escape(checkin.SeatCode),
+                            Markup.Escape(checkin.Gate),
+                            checkin.BoardingAt.ToString("yyyy-MM-dd HH:mm"),
+                            Markup.Escape(checkin.BoardingPassNumber));
+                    }
+
+                    AnsiConsole.Clear();
+                    AnsiConsole.Write(new Rule("[bold deepskyblue1] Check-in completado [/]").LeftJustified());
+                    AnsiConsole.Write(completedTable);
+                    Pause();
+                    continue;
+                }
+
+                var passengerLabel = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title("\nSelecciona el pasajero:")
+                        .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                        .AddChoices(candidates.PendingPassengers.Select(FormatPassengerChoice).Append("Volver")));
+
+                if (passengerLabel == "Volver")
+                    continue;
+
+                var passengerReservationId = int.Parse(passengerLabel.Split('|')[0]);
+                var (desiredSeat, allowRandomSeat) = await PromptSeatSelectionAsync(target.FlightId, cancellationToken);
+                if (desiredSeat is null && !allowRandomSeat)
+                    continue;
+
+                if (!AnsiConsole.Confirm("¿Confirmar el check-in del pasajero?", true))
+                    continue;
+
+                var result = await _clientPortalService.PerformOnlineCheckinAsync(
+                    target.ClientId,
+                    passengerReservationId,
+                    target.FlightId,
+                    desiredSeat,
+                    allowRandomSeat,
+                    DateTime.UtcNow,
+                    cancellationToken);
+
+                if (result.AdditionalSeatChoiceCharge > 0m)
+                {
+                    AnsiConsole.MarkupLine(
+                        $"\n[yellow]Cargo por elección de asiento:[/] [white]{result.AdditionalSeatChoiceCharge:0.00}[/]");
+                }
+
+                RenderBoardingPass(
+                    result.PassengerFullName,
+                    result.FlightCode,
+                    $"{result.OriginIata} → {result.DestinationIata}",
+                    result.Gate,
+                    result.DepartureAt,
+                    result.ArrivalAt,
+                    result.BoardingAt,
+                    result.SeatCode,
+                    result.CabinTypeName,
+                    result.BoardingPassNumber,
+                    result.BoardingPassStatus);
+                Pause();
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"\n[red]{Markup.Escape(ex.Message)}[/]");
+            Pause();
+        }
+    }
+
+    private async Task QueryBoardingPassAsync(CancellationToken cancellationToken)
+    {
+        var mode = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Buscar pase por:")
+                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                .AddChoices("Código del tiquete", "Código del pase", "Documento del cliente", ConsoleMenuHelpers.VolverAlMenu));
+
+        if (mode == ConsoleMenuHelpers.VolverAlMenu)
+            return;
+
+        var value = ConsoleMenuHelpers.PromptRequiredStringOrBack(mode + ":");
+        if (value is null)
+            return;
+
+        var result = mode switch
+        {
+            "Código del tiquete" => await _boardingPassesService.GetByTicketCodeAsync(value, cancellationToken),
+            "Código del pase" => await _boardingPassesService.GetByBoardingPassCodeAsync(value, cancellationToken),
+            _ => await _boardingPassesService.GetByDocumentAsync(value, cancellationToken)
         };
 
-        if (UserSession.Current?.IsAdmin == true)
+        if (result is null)
         {
-            options.Add("Crear check-in");
-            options.Add("Actualizar estado");
-            options.Add("Eliminar check-in");
+            AnsiConsole.MarkupLine("\n[yellow]No se encontró el pase de abordar.[/]");
+            Pause();
+            return;
         }
 
-        options.Add("Volver");
-        return options;
+        RenderBoardingPass(
+            result.PassengerName,
+            result.FlightCode,
+            result.RouteLabel,
+            result.Gate.Value,
+            result.DepartureAt,
+            result.DepartureAt,
+            result.BoardingAt.Value,
+            result.SeatCode.Value,
+            "Asignada",
+            result.Code.Value,
+            result.Status.Value);
+        Pause();
     }
 
-    private async Task ListAllAsync()
+    private async Task QueryReadyPassengersAsync(CancellationToken cancellationToken)
     {
-        var items = await _service.GetAllAsync();
-        var list = items.ToList();
-
-        if (!list.Any())
+        var flights = (await _boardingPassesService.GetFlightsWithReadyPassengersAsync(cancellationToken)).ToList();
+        if (flights.Count == 0)
         {
-            AnsiConsole.MarkupLine("[grey]No hay check-ins registrados.[/]");
+            AnsiConsole.MarkupLine("\n[yellow]No hay pasajeros listos para abordar.[/]");
+            Pause();
+            return;
+        }
+
+        var selected = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Seleccione el vuelo:")
+                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                .AddChoices(flights.Select(x => $"{x.FlightId}|{x.FlightCode}|{x.RouteLabel}|{x.DepartureAt:yyyy-MM-dd HH:mm}").Append("Volver")));
+
+        if (selected == "Volver")
+            return;
+
+        var flightId = int.Parse(selected.Split('|')[0]);
+        var passengers = await _boardingPassesService.GetReadyToBoardByFlightAsync(flightId, cancellationToken);
+
+        var table = new Table()
+            .Border(TableBorder.Rounded)
+            .BorderColor(Color.Grey)
+            .AddColumn("[bold grey]Nombre[/]")
+            .AddColumn("[bold grey]Documento[/]")
+            .AddColumn("[bold grey]Asiento[/]")
+            .AddColumn("[bold grey]Código tiquete[/]")
+            .AddColumn("[bold grey]Estado[/]")
+            .AddColumn("[bold grey]Check-in[/]");
+
+        foreach (var passenger in passengers)
+        {
+            table.AddRow(
+                Markup.Escape(passenger.PassengerName),
+                Markup.Escape(passenger.PassengerDocument),
+                Markup.Escape(passenger.SeatCode),
+                Markup.Escape(passenger.TicketCode),
+                Markup.Escape(passenger.TicketState),
+                passenger.CheckedInAt.ToString("yyyy-MM-dd HH:mm"));
+        }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(table);
+        Pause();
+    }
+
+    private async Task<(string? DesiredSeat, bool AllowRandomSeat)> PromptSeatSelectionAsync(int flightId, CancellationToken cancellationToken)
+    {
+        var mode = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("\nAsignación de asiento:")
+                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                .AddChoices("Asignar automáticamente", "Elegir asiento", "Cancelar"));
+
+        if (mode == "Cancelar")
+            return (null, false);
+
+        if (mode == "Asignar automáticamente")
+            return (null, true);
+
+        var availableSeats = (await _clientPortalService.GetAvailableSeatCodesAsync(flightId, cancellationToken)).ToList();
+        if (availableSeats.Count == 0)
+            throw new InvalidOperationException("No hay asientos disponibles.");
+
+        var seat = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Seleccione el asiento:")
+                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                .PageSize(15)
+                .AddChoices(availableSeats.Append("Cancelar")));
+
+        return seat == "Cancelar" ? (null, false) : (seat, false);
+    }
+
+    private async Task<CheckinTarget?> ResolveTargetAsync(CancellationToken cancellationToken)
+    {
+        var mode = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Buscar para check-in por:")
+                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                .AddChoices("Código del tiquete", "Código de reserva", "Volver"));
+
+        if (mode == "Volver")
+            return null;
+
+        if (mode == "Código del tiquete")
+        {
+            var ticketCode = ConsoleMenuHelpers.PromptRequiredStringOrBack("Código del tiquete:");
+            if (ticketCode is null)
+                return null;
+
+            var target = await (
+                from ticket in _db.Tickets.AsNoTracking()
+                join pr in _db.PassengerReservations.AsNoTracking() on ticket.PassengerReservation_Id equals pr.Id
+                join fr in _db.FlightReservations.AsNoTracking() on pr.Flight_Reservation_Id equals fr.Id
+                join bf in _db.BookingFlights.AsNoTracking() on fr.BookingFlightId equals bf.Id
+                join bookingRow in _db.Bookings.AsNoTracking() on bf.BookingId equals bookingRow.Id
+                join flight in _db.Flights.AsNoTracking() on bf.FlightId equals flight.Id
+                where ticket.Code == ticketCode.Trim()
+                select new CheckinTarget(bookingRow.ClientId, bookingRow.Id, flight.Id, ReservationReferenceCodec.Encode(bookingRow.Id), flight.FlightCode))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (target is null)
+                throw new InvalidOperationException("No se encontró el tiquete indicado.");
+
+            return target;
+        }
+
+        var bookingLookup = ConsoleMenuHelpers.PromptRequiredStringOrBack("Código de reserva:");
+        if (bookingLookup is null)
+            return null;
+
+        var bookingId = ResolveBookingId(bookingLookup);
+        var booking = await _db.Bookings.AsNoTracking().FirstOrDefaultAsync(b => b.Id == bookingId, cancellationToken)
+            ?? throw new InvalidOperationException("No se encontró la reserva indicada.");
+
+        var flights = await (
+            from bf in _db.BookingFlights.AsNoTracking()
+            join flight in _db.Flights.AsNoTracking() on bf.FlightId equals flight.Id
+            join route in _db.Routes.AsNoTracking() on flight.RouteId equals route.Id
+            join ao in _db.Airports.AsNoTracking() on route.OriginAirportId equals ao.Id
+            join ad in _db.Airports.AsNoTracking() on route.DestinationAirportId equals ad.Id
+            where bf.BookingId == booking.Id
+            orderby flight.DepartureAt
+            select new
+            {
+                flight.Id,
+                flight.FlightCode,
+                RouteLabel = ao.IataCode + " → " + ad.IataCode,
+                flight.DepartureAt
+            })
+            .ToListAsync(cancellationToken);
+
+        if (flights.Count == 0)
+            throw new InvalidOperationException("La reserva no tiene vuelos asociados.");
+
+        var selected = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Seleccione el vuelo:")
+                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
+                .AddChoices(flights.Select(f => $"{f.Id}|{f.FlightCode}|{f.RouteLabel}|{f.DepartureAt:yyyy-MM-dd HH:mm}").Append("Volver")));
+
+        if (selected == "Volver")
+            return null;
+
+        var flightId = int.Parse(selected.Split('|')[0]);
+        var flightCode = flights.First(f => f.Id == flightId).FlightCode;
+        return new CheckinTarget(booking.ClientId, booking.Id, flightId, ReservationReferenceCodec.Encode(booking.Id), flightCode);
+    }
+
+    private static int ResolveBookingId(string raw)
+    {
+        if (ReservationReferenceCodec.TryParseReservationCode(raw, out var bookingId))
+            return bookingId;
+
+        if (int.TryParse(raw, out bookingId))
+            return bookingId;
+
+        throw new InvalidOperationException("Código de reserva inválido.");
+    }
+
+    private static void RenderPassengersTable(string title, IReadOnlyList<CheckinPassengerRow> passengers, bool includeBoardingPass)
+    {
+        AnsiConsole.Write(new Rule($"[grey]{Markup.Escape(title)}[/]").LeftJustified());
+
+        if (passengers.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[grey]No hay registros en esta sección.[/]\n");
             return;
         }
 
         var table = new Table()
             .Border(TableBorder.Rounded)
-            .AddColumn("[blue]ID[/]")
-            .AddColumn("[blue]Tiquete ID[/]")
-            .AddColumn("[blue]Personal ID[/]")
-            .AddColumn("[blue]Asiento ID[/]")
-            .AddColumn("[blue]Fecha[/]")
-            .AddColumn("[blue]Estado ID[/]")
-            .AddColumn("[blue]Pase de abordar[/]");
+            .BorderColor(Color.Grey)
+            .AddColumn("[bold grey]Pasajero[/]")
+            .AddColumn("[bold grey]Documento[/]")
+            .AddColumn("[bold grey]Tiquete[/]")
+            .AddColumn("[bold grey]Estado[/]")
+            .AddColumn("[bold grey]Asiento[/]");
 
-        foreach (var item in list)
+        if (includeBoardingPass)
+            table.AddColumn("[bold grey]Pase de abordar[/]");
+
+        foreach (var passenger in passengers)
         {
-            table.AddRow(
-                item.Id.Value.ToString(),
-                item.TicketId.Value.ToString(),
-                item.StaffId.Value.ToString(),
-                item.FlightSeatId.Value.ToString(),
-                item.CheckedInAt.Value.ToString("yyyy-MM-dd HH:mm"),
-                item.CheckinStatusId.Value.ToString(),
-                item.BoardingPassNumber.Value
-            );
+            var row = new List<string>
+            {
+                Markup.Escape(passenger.PassengerName),
+                Markup.Escape(passenger.PassengerDocument),
+                Markup.Escape(passenger.TicketCode),
+                includeBoardingPass ? "[green]Check-in realizado[/]" : Markup.Escape(passenger.TicketState),
+                string.IsNullOrWhiteSpace(passenger.SeatCode) ? "[grey]—[/]" : Markup.Escape(passenger.SeatCode)
+            };
+
+            if (includeBoardingPass)
+                row.Add(string.IsNullOrWhiteSpace(passenger.BoardingPassNumber) ? "[grey]—[/]" : Markup.Escape(passenger.BoardingPassNumber));
+
+            table.AddRow(row.ToArray());
         }
 
         AnsiConsole.Write(table);
+        AnsiConsole.WriteLine();
     }
 
-    private async Task GetByIdAsync()
+    private static void RenderBoardingPass(
+        string passenger,
+        string flightCode,
+        string route,
+        string gate,
+        DateTime departureAt,
+        DateTime arrivalAt,
+        DateTime boardingAt,
+        string seatCode,
+        string cabinType,
+        string boardingPass,
+        string boardingPassStatus)
     {
-        AnsiConsole.MarkupLine("[bold blue]Buscar check-in por ID[/]");
+        var content =
+$@"══════════════════════════════════════
+       PASE DE ABORDAR
+══════════════════════════════════════
+Pasajero: {passenger}
+Vuelo:    {flightCode}
+Ruta:     {route}
+Fecha:    {departureAt:yyyy-MM-dd}
+Salida:   {departureAt:HH:mm}
+Llegada:  {arrivalAt:HH:mm}
+Asiento:  {seatCode}
+Clase:    {cabinType}
+Puerta:   {gate}
+Abordaje: {boardingAt:HH:mm}
+Estado:   {boardingPassStatus}
+Código:   {boardingPass}
+══════════════════════════════════════";
 
-        var id = ConsoleMenuHelpers.PromptPositiveIntOrBack("[yellow]ID:[/]");
-        if (id is null) return;
-
-        try
-        {
-            var item = await _service.GetByIdAsync(id.Value);
-
-            if (item is null)
-            {
-                AnsiConsole.MarkupLine("[red]Check-in no encontrado.[/]");
-                return;
-            }
-
-            var table = new Table()
-                .Border(TableBorder.Rounded)
-                .AddColumn("[blue]Campo[/]")
-                .AddColumn("[blue]Valor[/]");
-
-            table.AddRow("ID",           item.Id.Value.ToString());
-            table.AddRow("Tiquete ID", item.TicketId.Value.ToString());
-            table.AddRow("Personal ID", item.StaffId.Value.ToString());
-            table.AddRow("Asiento ID",   item.FlightSeatId.Value.ToString());
-            table.AddRow("Fecha",        item.CheckedInAt.Value.ToString("yyyy-MM-dd HH:mm"));
-            table.AddRow("Estado ID",    item.CheckinStatusId.Value.ToString());
-            table.AddRow("Pase de abordar", item.BoardingPassNumber.Value);
-
-            AnsiConsole.Write(table);
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
-        }
+        AnsiConsole.Write(new Panel(new Markup(Markup.Escape(content))).Border(BoxBorder.Rounded).BorderColor(Color.DeepSkyBlue1));
     }
 
-    private async Task CreateAsync()
+    private static string FormatPassengerChoice(CheckinPassengerRow passenger)
+        => $"{passenger.PassengerReservationId}|{passenger.PassengerName}|{passenger.PassengerDocument}|{passenger.TicketCode}";
+
+    private static void Pause()
     {
-        AnsiConsole.MarkupLine("[bold blue]Crear nuevo check-in[/]");
-
-        var id = ConsoleMenuHelpers.PromptPositiveIntOrBack("[yellow]ID:[/]");
-        if (id is null) return;
-        var ticketId = ConsoleMenuHelpers.PromptPositiveIntOrBack("[yellow]Tiquete ID:[/]");
-        if (ticketId is null) return;
-        var staffId = ConsoleMenuHelpers.PromptPositiveIntOrBack("[yellow]Personal ID:[/]");
-        if (staffId is null) return;
-        var flightSeatId = ConsoleMenuHelpers.PromptPositiveIntOrBack("[yellow]Asiento ID:[/]");
-        if (flightSeatId is null) return;
-        var checkedInAt = ConsoleMenuHelpers.PromptDateTimeOrBack("[yellow]Fecha de check-in (yyyy-MM-dd HH:mm):[/]", "yyyy-MM-dd HH:mm");
-        if (checkedInAt is null) return;
-        var checkinStatusId = ConsoleMenuHelpers.PromptPositiveIntOrBack("[yellow]Estado ID:[/]");
-        if (checkinStatusId is null) return;
-        var boardingPass = ConsoleMenuHelpers.PromptRequiredStringOrBack("[yellow]Pase de abordar:[/]");
-        if (boardingPass is null) return;
-
-        await AnsiConsole.Status()
-            .StartAsync("Creando check-in...", async ctx =>
-            {
-                try
-                {
-                    var item = await _service.CreateAsync(
-                        id.Value, ticketId.Value, staffId.Value, flightSeatId.Value,
-                        checkedInAt.Value, checkinStatusId.Value, boardingPass);
-
-                    AnsiConsole.MarkupLine($"[green]Check-in '[bold]{item.BoardingPassNumber.Value}[/]' creado correctamente.[/]");
-                }
-                catch (Exception ex)
-                {
-                    AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
-                }
-            });
+        AnsiConsole.WriteLine();
+        AnsiConsole.Prompt(new TextPrompt<string>("[grey]Presiona Enter para continuar...[/]").AllowEmpty());
     }
 
-    private async Task UpdateAsync()
-    {
-        AnsiConsole.MarkupLine("[bold yellow]Actualizar estado de check-in[/]");
-
-        var existing = await PromptCheckinSelectionAsync("[yellow]Seleccione el check-in a actualizar:[/]");
-        if (existing is null)
-            return;
-
-        AnsiConsole.MarkupLine($"[grey]Estado actual: {existing.CheckinStatusId.Value}[/]");
-
-        var newStatusId = ConsoleMenuHelpers.PromptIntOrBack("[yellow]Nuevo estado ID (vacío = mantener):[/]");
-
-        await AnsiConsole.Status()
-            .StartAsync("Actualizando check-in...", async ctx =>
-            {
-                try
-                {
-                    var updated = await _service.UpdateAsync(existing.Id.Value, newStatusId);
-                    AnsiConsole.MarkupLine($"[green]Check-in '[bold]{updated.Id.Value}[/]' actualizado correctamente.[/]");
-                }
-                catch (Exception ex)
-                {
-                    AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
-                }
-            });
-    }
-
-    private async Task DeleteAsync()
-    {
-        AnsiConsole.MarkupLine("[bold red]Eliminar check-in[/]");
-
-        var existing = await PromptCheckinSelectionAsync("[yellow]Seleccione el check-in a eliminar:[/]");
-        if (existing is null) return;
-
-        var confirm = AnsiConsole.Confirm($"[red]¿Estás seguro de eliminar el check-in {existing.Id.Value} del tiquete {existing.TicketId.Value}?[/]");
-
-        if (!confirm)
-        {
-            AnsiConsole.MarkupLine("[grey]Operación cancelada.[/]");
-            return;
-        }
-
-        await AnsiConsole.Status()
-            .StartAsync("Eliminando check-in...", async ctx =>
-            {
-                try
-                {
-                    var deleted = await _service.DeleteAsync(existing.Id.Value);
-
-                    if (deleted)
-                        AnsiConsole.MarkupLine("[green]Check-in eliminado correctamente.[/]");
-                    else
-                        AnsiConsole.MarkupLine("[red]Check-in no encontrado.[/]");
-                }
-                catch (Exception ex)
-                {
-                    AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
-                }
-            });
-    }
-
-    private async Task<dynamic?> PromptCheckinSelectionAsync(string title)
-    {
-        var items = (await _service.GetAllAsync()).OrderByDescending(x => x.CheckedInAt.Value).ToList();
-        if (!items.Any())
-        {
-            AnsiConsole.MarkupLine("[grey]No hay check-ins registrados.[/]");
-            return null;
-        }
-
-        var selected = AnsiConsole.Prompt(
-            new SelectionPrompt<string>()
-                .Title(title)
-                .HighlightStyle(new Style(foreground: Color.DeepSkyBlue1))
-                .PageSize(12)
-                .AddChoices(items.Select(FormatCheckinChoice).Append(ConsoleMenuHelpers.VolverAlMenu).ToList()));
-
-        if (selected == ConsoleMenuHelpers.VolverAlMenu)
-            return null;
-
-        return items.First(x => FormatCheckinChoice(x) == selected);
-    }
-
-    private static string FormatCheckinChoice(dynamic item) =>
-        $"{item.Id.Value} · Tiquete {item.TicketId.Value} · {item.CheckedInAt.Value:yyyy-MM-dd HH:mm}";
+    private sealed record CheckinTarget(int ClientId, int BookingId, int FlightId, string ReservationCode, string FlightCode);
 }
