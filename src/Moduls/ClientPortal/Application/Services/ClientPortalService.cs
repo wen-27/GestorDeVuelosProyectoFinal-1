@@ -10,6 +10,7 @@ using GestorDeVuelosProyectoFinal.src.Moduls.BookingStatuses.Infrastructure.Enti
 using GestorDeVuelosProyectoFinal.src.Moduls.CabinTypes.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.Checkins.Infrastructure.Entity;
 using GestorDeVuelosProyectoFinal.src.Moduls.CheckinStates.Infrastructure.Entity;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.src.Moduls.ClientPortal.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.src.Moduls.ClientPortal.Application.Models;
 using GestorDeVuelosProyectoFinal.src.Moduls.ClientPortal.Application.Support;
@@ -40,15 +41,17 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.ClientPortal.Application.Servic
 public sealed class ClientPortalService : IClientPortalService
 {
     private readonly AppDbContext _db;
+    private readonly IBoardingPassesService _boardingPasses;
 
     /// <summary>Tarifas demo (misma moneda que rates).</summary>
     private const decimal ExtraBaggagePerPiecePerFlightLeg = 45m;
     private const decimal PrioritySeatChoicePerPassengerPerLeg = 25m;
     private const decimal CheckInSpecificSeatChoiceFee = 15m;
 
-    public ClientPortalService(AppDbContext db)
+    public ClientPortalService(AppDbContext db, IBoardingPassesService boardingPasses)
     {
         _db = db;
+        _boardingPasses = boardingPasses;
     }
 
     public async Task<ClientContext> EnsureClientContextAsync(CancellationToken cancellationToken)
@@ -85,7 +88,7 @@ public sealed class ClientPortalService : IClientPortalService
         if (user.Person_Id is null)
         {
             var docTypeId = await GetAnyDocumentTypeIdAsync(cancellationToken);
-            var docNumber = $"USR-{user.Id}";
+            var docNumber = BuildSystemDocumentNumber(user.Id);
             var person = await GetOrCreatePersonAsync(docTypeId, docNumber, "Cliente", user.Username, cancellationToken);
 
             user.Person_Id = person.Id;
@@ -324,8 +327,8 @@ public sealed class ClientPortalService : IClientPortalService
 
         var pendingStatusId = await GetBookingStatusIdAsync("Pending", cancellationToken);
         var confirmedStatusId = await GetBookingStatusIdAsync("Confirmed", cancellationToken);
-        var paidStatusId = await GetPaymentStatusIdAsync("Paid", cancellationToken);
-        var issuedTicketStateId = await GetTicketStateIdAsync("Issued", cancellationToken);
+        var paidStatusId = await GetPaymentStatusIdAsync("Pagado", cancellationToken);
+        var issuedTicketStateId = await GetTicketStateIdAsync("Emitido", cancellationToken);
 
         var paymentMethodId = await EnsurePaymentMethodAsync(request.PaymentMethod, cancellationToken);
 
@@ -474,7 +477,7 @@ public sealed class ClientPortalService : IClientPortalService
         CancellationToken cancellationToken)
     {
         await EnsureLookupsAsync(cancellationToken);
-        var voidedTicketStateId = await GetTicketStateIdAsync("Voided", cancellationToken);
+        var voidedTicketStateId = await GetTicketStateIdAsync("Cancelado", cancellationToken);
         var cancelledBookingStatusId = await GetBookingStatusIdAsync("Cancelled", cancellationToken);
 
         var bookings = await _db.Bookings.AsNoTracking()
@@ -721,7 +724,7 @@ public sealed class ClientPortalService : IClientPortalService
         if (hasAnyCheckin)
             throw new InvalidOperationException("No puedes cancelar una reserva que ya tiene check-in registrado.");
 
-        var voidedId = await GetTicketStateIdAsync("Voided", cancellationToken);
+        var voidedId = await GetTicketStateIdAsync("Cancelado", cancellationToken);
         var tickets = await _db.Tickets.Where(t => prIds.Contains(t.PassengerReservation_Id)).ToListAsync(cancellationToken);
         foreach (var t in tickets)
         {
@@ -732,10 +735,74 @@ public sealed class ClientPortalService : IClientPortalService
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task CancelTicketAsync(int ticketId, int clientId, CancellationToken cancellationToken)
+    {
+        await EnsureLookupsAsync(cancellationToken);
+
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken)
+            ?? throw new InvalidOperationException("Tiquete no encontrado.");
+
+        var passengerReservation = await _db.PassengerReservations.AsNoTracking()
+            .FirstOrDefaultAsync(pr => pr.Id == ticket.PassengerReservation_Id, cancellationToken)
+            ?? throw new InvalidOperationException("No se encontró la reserva del pasajero.");
+
+        var flightReservation = await _db.FlightReservations.AsNoTracking()
+            .FirstOrDefaultAsync(fr => fr.Id == passengerReservation.Flight_Reservation_Id, cancellationToken)
+            ?? throw new InvalidOperationException("No se encontró la reserva del vuelo.");
+
+        var bookingFlight = await _db.BookingFlights.AsNoTracking()
+            .FirstOrDefaultAsync(bf => bf.Id == flightReservation.BookingFlightId, cancellationToken)
+            ?? throw new InvalidOperationException("No se encontró el vuelo asociado a la reserva.");
+
+        var booking = await _db.Bookings.AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == bookingFlight.BookingId && b.ClientId == clientId, cancellationToken)
+            ?? throw new InvalidOperationException("Ese tiquete no pertenece al cliente autenticado.");
+
+        var hasCheckin = await _db.Checkins.AsNoTracking().AnyAsync(c => c.TicketId == ticketId, cancellationToken);
+        if (hasCheckin)
+            throw new InvalidOperationException("No puedes cancelar un tiquete que ya tiene check-in realizado.");
+
+        var cancelledTicketStateId = await GetTicketStateIdAsync("Cancelado", cancellationToken);
+        if (ticket.TicketState_Id == cancelledTicketStateId)
+            throw new InvalidOperationException("Ese tiquete ya está cancelado.");
+
+        ticket.TicketState_Id = cancelledTicketStateId;
+        ticket.UpdatedAt = DateTime.UtcNow;
+
+        var flight = await _db.Flights.FirstOrDefaultAsync(f => f.Id == bookingFlight.FlightId, cancellationToken);
+        if (flight is not null)
+        {
+            flight.AvailableSeats += 1;
+            flight.UpdatedAt = DateTime.UtcNow;
+        }
+
+        var activeTicketCount = await (
+            from t in _db.Tickets.AsNoTracking()
+            join pr in _db.PassengerReservations.AsNoTracking() on t.PassengerReservation_Id equals pr.Id
+            join fr in _db.FlightReservations.AsNoTracking() on pr.Flight_Reservation_Id equals fr.Id
+            join bf in _db.BookingFlights.AsNoTracking() on fr.BookingFlightId equals bf.Id
+            where bf.BookingId == booking.Id && t.Id != ticketId && t.TicketState_Id != cancelledTicketStateId
+            select t.Id)
+            .CountAsync(cancellationToken);
+
+        if (activeTicketCount == 0)
+        {
+            var cancelledBookingStatusId = await GetBookingStatusIdAsync("Cancelled", cancellationToken);
+            var editableBooking = await _db.Bookings.FirstOrDefaultAsync(b => b.Id == booking.Id, cancellationToken);
+            if (editableBooking is not null)
+            {
+                editableBooking.BookingStatusId = cancelledBookingStatusId;
+                editableBooking.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<TicketSummary>> GetMyTicketsAsync(int clientId, CancellationToken cancellationToken)
     {
         await EnsureLookupsAsync(cancellationToken);
-        var voidedTicketStateId = await GetTicketStateIdAsync("Voided", cancellationToken);
+        var voidedTicketStateId = await GetTicketStateIdAsync("Cancelado", cancellationToken);
 
         var bookingIds = await _db.Bookings.AsNoTracking().Where(b => b.ClientId == clientId).Select(b => b.Id).ToListAsync(cancellationToken);
         var bookingFlights = await _db.BookingFlights.AsNoTracking().Where(bf => bookingIds.Contains(bf.BookingId)).ToListAsync(cancellationToken);
@@ -792,7 +859,7 @@ public sealed class ClientPortalService : IClientPortalService
                 f.EstimatedArrivalAt,
                 $"{pe.FirstName} {pe.LastName}",
                 checkinByTicketId.ContainsKey(t.Id)
-                    ? "Check-in listo"
+                    ? "Check-in realizado"
                     : ticketStates.FirstOrDefault(s => s.Id == t.TicketState_Id)?.Name ?? t.TicketState_Id.ToString(),
                 checkinByTicketId.TryGetValue(t.Id, out var ck)
                     ? seatCodesById.GetValueOrDefault(ck.FlightSeatId)
@@ -804,7 +871,7 @@ public sealed class ClientPortalService : IClientPortalService
             .ToList();
     }
 
-    public async Task<(TicketSummary Ticket, string? BoardingPassNumber, string? SeatCode, string? CabinTypeName, bool IsCheckedIn)> GetTicketDetailsAsync(
+    public async Task<(TicketSummary Ticket, string? BoardingPassNumber, string? SeatCode, string? CabinTypeName, string? Gate, DateTime? BoardingAt, string? BoardingPassStatus, bool IsCheckedIn)> GetTicketDetailsAsync(
         int ticketId,
         int clientId,
         CancellationToken cancellationToken)
@@ -816,14 +883,27 @@ public sealed class ClientPortalService : IClientPortalService
 
         var checkin = await _db.Checkins.AsNoTracking().FirstOrDefaultAsync(c => c.TicketId == ticketId, cancellationToken);
         if (checkin is null)
-            return (ticket, null, null, null, false);
+            return (ticket, null, null, null, null, null, null, false);
 
         var seat = await _db.FlightSeats.AsNoTracking().FirstOrDefaultAsync(s => s.Id == checkin.FlightSeatId, cancellationToken);
         var cabin = seat is null
             ? null
             : await _db.CabinTypes.AsNoTracking().FirstOrDefaultAsync(c => c.Id == seat.CabinTypeId, cancellationToken);
+        var boardingPass = await _boardingPasses.GetByTicketIdAsync(ticketId, cancellationToken);
+        if (boardingPass is null)
+        {
+            boardingPass = await _boardingPasses.CreateOrUpdateFromCheckinAsync(checkin.Id, cancellationToken);
+        }
 
-        return (ticket, checkin.BoardingPassNumber, seat?.Code, cabin?.Name, true);
+        return (
+            ticket,
+            checkin.BoardingPassNumber,
+            seat?.Code,
+            cabin?.Name,
+            boardingPass?.Gate.Value,
+            boardingPass?.BoardingAt.Value,
+            boardingPass?.Status.Value,
+            true);
     }
 
     public async Task<IReadOnlyList<(int BookingId, IReadOnlyList<(int FlightId, string FlightCode, string RouteLabel, DateTime DepartureAt, DateTime ArrivalAt)> Flights)>> FindBookingsForCheckinAsync(
@@ -965,6 +1045,15 @@ public sealed class ClientPortalService : IClientPortalService
         if (flight.DepartureAt - utcNow > TimeSpan.FromHours(24))
             throw new InvalidOperationException("El check-in solo está disponible dentro de las 24 horas previas al vuelo.");
 
+        var flightStatusName = await _db.FlightStatuses.AsNoTracking()
+            .Where(x => x.Id == flight.FlightStatusId)
+            .Select(x => x.Name)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var allowedFlightStatuses = new[] { "Scheduled", "Boarding", "Rescheduled" };
+        if (string.IsNullOrWhiteSpace(flightStatusName) || !allowedFlightStatuses.Contains(flightStatusName, StringComparer.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"El vuelo no está habilitado para check-in. Estado actual: {flightStatusName ?? flight.FlightStatusId.ToString()}.");
+
         var route = await _db.Routes.AsNoTracking().FirstOrDefaultAsync(r => r.Id == flight.RouteId, cancellationToken);
         if (route is null) throw new InvalidOperationException("Ruta no encontrada.");
         var ao = await _db.Airports.AsNoTracking().FirstOrDefaultAsync(a => a.Id == route.OriginAirportId, cancellationToken);
@@ -1036,7 +1125,7 @@ public sealed class ClientPortalService : IClientPortalService
     }
 
     public async Task<(string BoardingPassNumber, string SeatCode, string CabinTypeName, string PassengerFullName, string FlightCode,
-        string OriginIata, string DestinationIata, DateTime DepartureAt, DateTime ArrivalAt,
+        string OriginIata, string DestinationIata, string Gate, DateTime DepartureAt, DateTime ArrivalAt, DateTime BoardingAt, string BoardingPassStatus,
         decimal AdditionalSeatChoiceCharge)> PerformOnlineCheckinAsync(
         int clientId,
         int passengerReservationId,
@@ -1053,12 +1142,36 @@ public sealed class ClientPortalService : IClientPortalService
             throw new InvalidOperationException("No se encontró el tiquete del pasajero seleccionado.");
 
         var ticketId = ticket.Id;
+        var bookingId = await ResolveBookingIdForTicketAsync(clientId, ticketId, cancellationToken);
 
         var already = await _db.Checkins.AsNoTracking().FirstOrDefaultAsync(c => c.TicketId == ticketId, cancellationToken);
         if (already is not null)
             throw new InvalidOperationException("Este pasajero ya tiene check-in para ese vuelo.");
 
-        var candidates = await GetCheckinCandidatesAsync(clientId, bookingId: await ResolveBookingIdForTicketAsync(clientId, ticketId, cancellationToken), flightId, utcNow, cancellationToken);
+        var booking = await _db.Bookings.AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == bookingId && b.ClientId == clientId, cancellationToken)
+            ?? throw new InvalidOperationException("No se encontró la reserva asociada al tiquete.");
+
+        var paidStatusId = await GetPaymentStatusIdAsync("Pagado", cancellationToken);
+        var hasPaidPayment = await _db.Payments.AsNoTracking()
+            .AnyAsync(p => p.BookingId == booking.Id && p.PaymentStatusId == paidStatusId, cancellationToken);
+        if (!hasPaidPayment)
+            throw new InvalidOperationException("No se puede hacer check-in porque el pago está pendiente.");
+
+        var issuedTicketStateId = await GetTicketStateIdAsync("Emitido", cancellationToken);
+        var checkedInTicketStateId = await GetTicketStateIdAsync("Check-in realizado", cancellationToken);
+        var boardedTicketStateId = await GetTicketStateIdAsync("Abordado", cancellationToken);
+        var cancelledTicketStateId = await GetTicketStateIdAsync("Cancelado", cancellationToken);
+        if (ticket.TicketState_Id == checkedInTicketStateId)
+            throw new InvalidOperationException("Este tiquete ya tiene check-in realizado.");
+        if (ticket.TicketState_Id == boardedTicketStateId)
+            throw new InvalidOperationException("Este pasajero ya fue marcado como abordado.");
+        if (ticket.TicketState_Id == cancelledTicketStateId)
+            throw new InvalidOperationException("El tiquete está cancelado.");
+        if (ticket.TicketState_Id != issuedTicketStateId)
+            throw new InvalidOperationException("El tiquete no está emitido.");
+
+        var candidates = await GetCheckinCandidatesAsync(clientId, bookingId, flightId, utcNow, cancellationToken);
         var isCandidate = candidates.PendingPassengers.Any(t => t.PassengerReservationId == passengerReservationId);
         if (!isCandidate)
             throw new InvalidOperationException("Ese pasajero no pertenece a esa reserva o vuelo.");
@@ -1088,11 +1201,10 @@ public sealed class ClientPortalService : IClientPortalService
 
         chosen.IsOccupied = true;
 
-        var usedTicketStateId = await GetTicketStateIdAsync("Used", cancellationToken);
-        ticket.TicketState_Id = usedTicketStateId;
+        ticket.TicketState_Id = checkedInTicketStateId;
         ticket.UpdatedAt = DateTime.UtcNow;
 
-        var checkinCompletedId = await GetCheckinStateIdAsync("Completed", cancellationToken);
+        var checkinCompletedId = await GetCheckinStateIdAsync("Realizado", cancellationToken);
         var bp = $"BP-{Guid.NewGuid().ToString()[..6].ToUpper()}";
 
         var checkin = new CheckinEntity
@@ -1110,9 +1222,8 @@ public sealed class ClientPortalService : IClientPortalService
         if (!string.IsNullOrWhiteSpace(desiredSeatCode))
         {
             additionalSeatChoiceCharge = CheckInSpecificSeatChoiceFee;
-            var bookingIdForFee = await ResolveBookingIdForTicketAsync(clientId, ticketId, cancellationToken);
             var bookingForFee = await _db.Bookings.FirstOrDefaultAsync(
-                b => b.Id == bookingIdForFee && b.ClientId == clientId,
+                b => b.Id == bookingId && b.ClientId == clientId,
                 cancellationToken);
             if (bookingForFee is null)
                 throw new InvalidOperationException("No se pudo registrar el cargo adicional de asiento.");
@@ -1120,7 +1231,6 @@ public sealed class ClientPortalService : IClientPortalService
             bookingForFee.TotalAmount += additionalSeatChoiceCharge;
             bookingForFee.UpdatedAt = utcNow;
 
-            var paidStatusId = await GetPaymentStatusIdAsync("Paid", cancellationToken);
             var existingPaymentMethodId = await _db.Payments.AsNoTracking()
                 .Where(p => p.BookingId == bookingForFee.Id)
                 .OrderBy(p => p.Id)
@@ -1143,6 +1253,7 @@ public sealed class ClientPortalService : IClientPortalService
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+        var boardingPass = await _boardingPasses.CreateOrUpdateFromCheckinAsync(checkin.Id, cancellationToken);
 
         var flight = await _db.Flights.AsNoTracking().FirstAsync(f => f.Id == flightId, cancellationToken);
         var route = await _db.Routes.AsNoTracking().FirstAsync(r => r.Id == flight.RouteId, cancellationToken);
@@ -1152,7 +1263,20 @@ public sealed class ClientPortalService : IClientPortalService
 
         var passengerName = await ResolvePassengerNameForTicketAsync(ticketId, cancellationToken);
 
-        return (bp, chosen.Code, cabin?.Name ?? chosen.CabinTypeId.ToString(), passengerName, flight.FlightCode, ao.IataCode, ad.IataCode, flight.DepartureAt, flight.EstimatedArrivalAt, additionalSeatChoiceCharge);
+        return (
+            boardingPass.Code.Value,
+            chosen.Code,
+            cabin?.Name ?? chosen.CabinTypeId.ToString(),
+            passengerName,
+            flight.FlightCode,
+            ao.IataCode,
+            ad.IataCode,
+            boardingPass.Gate.Value,
+            flight.DepartureAt,
+            flight.EstimatedArrivalAt,
+            boardingPass.BoardingAt.Value,
+            boardingPass.Status.Value,
+            additionalSeatChoiceCharge);
     }
 
     private async Task DeductSoldSeatsFromFlightsAsync(
@@ -1190,13 +1314,15 @@ public sealed class ClientPortalService : IClientPortalService
         await EnsureBookingStatusAsync("Confirmed", cancellationToken);
         await EnsureBookingStatusAsync("Cancelled", cancellationToken);
 
-        await EnsurePaymentStatusAsync("Paid", cancellationToken);
+        await EnsurePaymentStatusAsync("Pagado", cancellationToken);
 
-        await EnsureTicketStateAsync("Issued", cancellationToken);
-        await EnsureTicketStateAsync("Used", cancellationToken);
-        await EnsureTicketStateAsync("Voided", cancellationToken);
+        await EnsureTicketStateAsync("Emitido", cancellationToken);
+        await EnsureTicketStateAsync("Check-in realizado", cancellationToken);
+        await EnsureTicketStateAsync("Abordado", cancellationToken);
+        await EnsureTicketStateAsync("Usado", cancellationToken);
+        await EnsureTicketStateAsync("Cancelado", cancellationToken);
 
-        await EnsureCheckinStateAsync("Completed", cancellationToken);
+        await EnsureCheckinStateAsync("Realizado", cancellationToken);
 
         // PassengerTypes en este proyecto se siembran como Adult/Senior/Child/Infant.
         await EnsurePassengerTypeAsync("Adult", minAge: 12, maxAge: null, cancellationToken);
@@ -1367,6 +1493,9 @@ public sealed class ClientPortalService : IClientPortalService
         await _db.SaveChangesAsync(cancellationToken);
         return created;
     }
+
+    private static string BuildSystemDocumentNumber(int userId)
+        => (900000000 + userId).ToString();
 
     private async Task<PassengersEntity> GetOrCreatePassengerAsync(
         int personId,

@@ -7,11 +7,13 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.TicketStates.Infrastructure.Per
 public static class TicketStatesSeeder
 {
     private static readonly string[] States =
-    [
+    {
         "Emitido",
+        "Check-in realizado",
+        "Abordado",
         "Usado",
         "Cancelado"
-    ];
+    };
 
     public static async Task SeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
@@ -31,4 +33,3 @@ public static class TicketStatesSeeder
         await db.SaveChangesAsync(cancellationToken);
     }
 }
-

@@ -172,6 +172,11 @@ using GestorDeVuelosProyectoFinal.src.Moduls.CheckinStates.Application.Services;
 using GestorDeVuelosProyectoFinal.src.Moduls.Checkins.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.src.Moduls.Checkins.Application.Services;
 using GestorDeVuelosProyectoFinal.src.Moduls.Checkins.UI;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.Application.Interfaces;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.Application.Services;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.Domain.Repositories;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.Infrastructure.Repository;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.UI;
 using GestorDeVuelosProyectoFinal.src.Moduls.FlightSeats.Application.Interfaces;
 using GestorDeVuelosProyectoFinal.src.Moduls.FlightSeats.Application.Services;
 using GestorDeVuelosProyectoFinal.src.Moduls.FlightSeats.ui;
@@ -295,6 +300,7 @@ public static class GestorServiceRegistration
         "GestorDeVuelosProyectoFinal.src.Moduls.BaggageTypes",
         "GestorDeVuelosProyectoFinal.src.Moduls.Checkins",
         "GestorDeVuelosProyectoFinal.src.Moduls.CheckinStates",
+        "GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses",
         "GestorDeVuelosProyectoFinal.Moduls.CardIssuers",
         "GestorDeVuelosProyectoFinal.src.Moduls.CardTypes",
         "GestorDeVuelosProyectoFinal.src.Moduls.Permissions",
@@ -497,6 +503,8 @@ public static class GestorServiceRegistration
         services.AddTransient<IBaggageTypesService, BaggageTypesService>();
         services.AddTransient<ICheckinsService, CheckinsService>();
         services.AddTransient<ICheckinStatesService, CheckinStatesService>();
+        services.AddTransient<IBoardingPassesRepository, BoardingPassesRepository>();
+        services.AddTransient<IBoardingPassesService, BoardingPassesService>();
         services.AddTransient<ICardIssuersService, CardIssuersService>();
         services.AddTransient<ICardTypesService, CardTypesService>();
         services.AddTransient<IPermissionsService, PermissionsService>();
@@ -519,6 +527,7 @@ public static class GestorServiceRegistration
         services.AddTransient<BaggageConsoleUI>();
         services.AddTransient<BaggageTypesConsoleUI>();
         services.AddTransient<CheckinsConsoleUI>();
+        services.AddTransient<BoardingPassesMenu>();
         services.AddTransient<CardIssuersConsoleUI>();
         services.AddTransient<CardTypesConsoleUI>();
         services.AddTransient<PermissionsConsoleUI>();

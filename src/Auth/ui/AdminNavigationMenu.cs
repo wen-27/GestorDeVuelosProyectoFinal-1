@@ -46,6 +46,7 @@ using GestorDeVuelosProyectoFinal.src.Moduls.Baggage.UI;
 using GestorDeVuelosProyectoFinal.src.Moduls.BaggageTypes.UI;
 using GestorDeVuelosProyectoFinal.src.Moduls.CardTypes.UI;
 using GestorDeVuelosProyectoFinal.src.Moduls.Checkins.UI;
+using GestorDeVuelosProyectoFinal.src.Moduls.BoardingPasses.UI;
 using GestorDeVuelosProyectoFinal.src.Moduls.FlightSeats.ui;
 using GestorDeVuelosProyectoFinal.src.Moduls.InvoiceItems.UI;
 using GestorDeVuelosProyectoFinal.src.Moduls.Invoices.UI;
@@ -250,7 +251,8 @@ public sealed class AdminNavigationMenu
                     cancellationToken,
                     ("Tipos de equipaje", () => sp.GetRequiredService<BaggageTypesConsoleUI>().ShowAsync()),
                     ("Equipaje", () => sp.GetRequiredService<BaggageConsoleUI>().ShowAsync()),
-                    ("Check-in", () => sp.GetRequiredService<CheckinsConsoleUI>().ShowAsync()));
+                    ("Check-in", () => sp.GetRequiredService<CheckinsConsoleUI>().ShowAsync(cancellationToken)),
+                    ("Pases de abordar", () => sp.GetRequiredService<BoardingPassesMenu>().RunAsync(cancellationToken)));
                 break;
 
             case "Reportes":

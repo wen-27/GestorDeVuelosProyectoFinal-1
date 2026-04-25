@@ -7,11 +7,11 @@ namespace GestorDeVuelosProyectoFinal.src.Moduls.CheckinStates.Infrastructure.Pe
 public static class CheckinStatesSeeder
 {
     private static readonly string[] States =
-    [
+    {
         "Pendiente",
-        "Confirmado",
+        "Realizado",
         "Cancelado"
-    ];
+    };
 
     public static async Task SeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
@@ -31,4 +31,3 @@ public static class CheckinStatesSeeder
         await db.SaveChangesAsync(cancellationToken);
     }
 }
-
